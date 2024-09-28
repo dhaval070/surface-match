@@ -13,6 +13,7 @@ function App() {
   const [allSites, setAllSites] = useState([])
   const [isOpen, setIsOpen] = useState(false)
   const [currSiteLoc, setCurrSiteLoc] = useState(null)
+  const [isBusy, setBusy] = useState(false)
 
   SurfaceDialog.propTypes = {
       isOpen: PropTypes.bool.isRequired,
@@ -25,16 +26,17 @@ function App() {
       if (site == "") {
           return
       }
-      console.log("site", site)
+      setBusy(true)
       axios.get(apiurl + "/site-locations/"+ site.toString()).then((resp) => {
         setSiteLoc(resp.data)
-      }).catch(e => console.error(e))
+      }).catch(e => console.error(e)).finally(() => setBusy(false))
   },[site]);
 
   useEffect(function() {
+      setBusy(true)
     axios.get(apiurl + "/sites").then((resp) => {
         setAllSites(resp.data)
-    }).catch(e => console.error(e))
+    }).catch(e => console.error(e)).finally(() => setBusy(false))
   },[])
 
 
@@ -44,12 +46,13 @@ function App() {
   }
 
   let surfaceSelected = function(id, siteloc) {
-      console.log(siteloc)
+    setBusy(true)
     axios.post(apiurl + "/set-surface", {
         site: site,
         location: siteloc.location,
         surface_id: id,
     }).then(resp => setSiteLoc(resp.data)).catch((e) => console.error(e)).finally(() => {
+        setBusy(false)
         setIsOpen(false)
     })
   }
@@ -82,6 +85,15 @@ function App() {
 
   return (
     <div className="App w-max">
+
+    {isBusy &&
+    <div className="w-full h-full fixed top-0 left-0 bg-white opacity-75 z-50">
+      <div className="flex justify-center items-center mt-[50vh]">
+        <div className="fas fa-circle-notch fa-spin fa-5x text-violet-600"></div>
+      </div>
+    </div>
+    }
+
     <SurfaceDialog isOpen={isOpen} siteLoc={currSiteLoc} setIsOpen={setIsOpen} surfaceSelected={surfaceSelected} />
       <h1 className="text-3xl font-bold text-center">Match Surfaces</h1>
       <div className="">
