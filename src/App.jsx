@@ -61,15 +61,16 @@ function App() {
 
     if (siteLoc.length > 0) {
          rows = siteLoc.map(r => (
-            <tr key={r.location}>
+            <tr key={r.location} className="even:bg-gray-50 odd:bg-gray-200">
               <td>{r.location}</td>
               <td>{r.address}</td>
               <td>{r.surface_id}</td>
+              <td>{r.LinkedSurface.name}</td>
               <td>
-                <Button className="rounded bg-sky-600 py-2 px-2 text-sm text-white data-[hover]:bg-sky-500 data-[active]:bg-sky-700" onClick={() => assignSurface(r)}>Change</Button>
+                <Button className="rounded bg-sky-600 py-2 px-2 text-xs text-white data-[hover]:bg-sky-500 data-[active]:bg-sky-700" onClick={() => assignSurface(r)}>Change</Button>
                 &nbsp;&nbsp;
                 { r.surface_id != 0 &&
-                <Button className="rounded bg-sky-600 py-2 px-2 text-sm text-white data-[hover]:bg-sky-500 data-[active]:bg-sky-700" onClick={() => surfaceSelected(0, r)}>Unset</Button>
+                <Button className="rounded bg-emerald-600 py-2 px-2 text-xs text-white data-[hover]:bg-emerald-500 data-[active]:bg-emerald-700" onClick={() => surfaceSelected(0, r)}>Unset</Button>
 }
               </td>
             </tr>
@@ -107,10 +108,10 @@ function App() {
 
       </div>
         </Field>
-      <table className="table-auto">
+      <table className="table-auto bg-gray-100">
       <tbody>
-        <tr>
-            <th>Location</th><th>Address</th><th>Surface ID</th><th></th>
+        <tr className="bg-slate-300">
+            <th>Location</th><th>Address</th><th>Surface ID</th><th>Surface name</th><th></th>
         </tr>
         {rows}
         </tbody>
@@ -133,7 +134,7 @@ function SurfaceDialog(props) {
     if (surfaces.length > 0) {
         res = surfaces.map(r => (
             <tr key={r.id}>
-                <td><a href="#" className="font-bold text-blue-900" onClick={() => props.surfaceSelected(r.id, props.siteLoc)} >{r.id}</a></td>
+                <td><a href="#" className="font-bold text-blue-600 hover:text-blue-400" onClick={() => props.surfaceSelected(r.id, props.siteLoc)} >{r.id}</a></td>
                 <td>{r.name}</td>
                 <td>{r.Location.name}</td>
                 <td>{r.Location.address1}</td>
