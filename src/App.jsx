@@ -5,8 +5,8 @@ import { Description, Dialog, DialogPanel, DialogTitle } from '@headlessui/react
 import PropTypes from 'prop-types';
 import { Field, Label, Select, Button } from '@headlessui/react'
 
-var apiurl = "http://localhost:8000"
-// axios.defaults.headers["Origin"] = "localhost"
+const apiurl = import.meta.env.VITE_API_URL
+
 function App() {
   const [siteLoc, setSiteLoc] = useState([])
   const [site, setSite] = useState("")
@@ -24,6 +24,7 @@ function App() {
 
   useEffect(function() {
       if (site == "") {
+          setSiteLoc([])
           return
       }
       setBusy(true)
@@ -85,7 +86,7 @@ function App() {
     }
 
   return (
-    <div className="App w-max">
+    <div className="App w-fit">
 
     {isBusy &&
     <div className="w-full h-full fixed top-0 left-0 bg-white opacity-75 z-50">
@@ -96,18 +97,18 @@ function App() {
     }
 
     <SurfaceDialog isOpen={isOpen} siteLoc={currSiteLoc} setIsOpen={setIsOpen} surfaceSelected={surfaceSelected} />
-      <h1 className="text-3xl font-bold text-center">Match Surfaces</h1>
-      <div className="">
-    <Field>
-      <Label  className="text-sm/6 font-medium ">Site</Label>
-      <div className="relative">
-          <Select onChange={(e) => setSite(e.currentTarget.value)}>
+
+    <h1 className="text-3xl font-bold text-center">Match Surfaces</h1>
+    <Field >
+      <div className="flex justify-start ">
+            <Label  className="text-sm/6 font-medium ">Site</Label>&nbsp;&nbsp;
+          <Select onChange={(e) => setSite(e.currentTarget.value)} className="rounded border-solid outline outline-gray-400 outline-2" >
             <option value="">Select</option>
             {options}
           </Select>
-
       </div>
-        </Field>
+    </Field >
+    <Field className="my-5">
       <table className="table-auto bg-gray-100">
       <tbody>
         <tr className="bg-slate-300">
@@ -116,8 +117,8 @@ function App() {
         {rows}
         </tbody>
       </table>
-      </div>
-    </div>
+    </Field >
+  </div>
   )
 }
 
