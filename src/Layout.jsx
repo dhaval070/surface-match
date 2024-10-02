@@ -18,7 +18,7 @@ export default function Layout() {
         <Button onClick={logout} className="rounded bg-amber-600 py-2 px-4 text-sm text-white data-[hover]:bg-amber-500 data-[active]:bg-sky-700">Logout</Button>
         </>}
     </div>
-    <Outlet />;
+    <Outlet />
     </div>
 
 }
