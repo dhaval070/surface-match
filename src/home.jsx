@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react'
-import axios from 'axios'
 import './App.css'
 import { Description, Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
 import PropTypes from 'prop-types';
 import { Field, Label, Select, Button } from '@headlessui/react'
+import { useAuth } from './AuthProvider.jsx'
 
 const apiurl = import.meta.env.VITE_API_URL
-axios.defaults.withCredentials = true
 
 export default function Home() {
     const [siteLoc, setSiteLoc] = useState([])
@@ -15,12 +14,15 @@ export default function Home() {
     const [isOpen, setIsOpen] = useState(false)
     const [currSiteLoc, setCurrSiteLoc] = useState(null)
     const [isBusy, setBusy] = useState(false)
+    const auth = useAuth()
+    const api = auth.api
 
     SurfaceDialog.propTypes = {
         isOpen: PropTypes.bool.isRequired,
         setIsOpen: PropTypes.func,
         surfaceSelected: PropTypes.func,
         siteLoc: PropTypes.object,
+        api: PropTypes.func,
     }
 
     useEffect(function() {
@@ -29,17 +31,17 @@ export default function Home() {
             return
         }
         setBusy(true)
-        axios.get(apiurl + "/site-locations/"+ site.toString()).then((resp) => {
+        api.get(apiurl + "/site-locations/"+ site.toString()).then((resp) => {
           setSiteLoc(resp.data)
         }).catch(e => console.error(e)).finally(() => setBusy(false))
-    },[site]);
+    },[site, api]);
 
     useEffect(function() {
         setBusy(true)
-      axios.get(apiurl + "/sites").then((resp) => {
+        api.get(apiurl + "/sites").then((resp) => {
           setAllSites(resp.data)
-      }).catch(e => console.error(e)).finally(() => setBusy(false))
-    },[])
+        }).catch(e => console.error(e)).finally(() => setBusy(false))
+    },[api])
 
 
     let assignSurface = function(rec) {
@@ -48,14 +50,14 @@ export default function Home() {
     }
 
     let surfaceSelected = function(id, siteloc) {
+      setIsOpen(false)
       setBusy(true)
-      axios.post(apiurl + "/set-surface", {
+      api.post(apiurl + "/set-surface", {
           site: site,
           location: siteloc.location,
           surface_id: id,
       }).then(resp => setSiteLoc(resp.data)).catch((e) => console.error(e)).finally(() => {
           setBusy(false)
-          setIsOpen(false)
       })
     }
 
@@ -97,7 +99,7 @@ export default function Home() {
       </div>
       }
 
-      <SurfaceDialog isOpen={isOpen} siteLoc={currSiteLoc} setIsOpen={setIsOpen} surfaceSelected={surfaceSelected} />
+      <SurfaceDialog api={api} isOpen={isOpen} siteLoc={currSiteLoc} setIsOpen={setIsOpen} surfaceSelected={surfaceSelected} />
 
       <h1 className="text-3xl font-bold text-center">Match Surfaces</h1>
       <Field >
@@ -127,11 +129,15 @@ function SurfaceDialog(props) {
     const [surfaces, setSurfaces] = useState([])
 
     useEffect(function() {
-        axios.get(apiurl + "/surfaces").then((res) => {
+        if (!props.api) return
+        props.api.get(apiurl + "/surfaces").then((res) => {
             setSurfaces(res.data)
         }).catch(e => console.error(e))
-    },[])
+    },[props.api])
 
+    if (!props.api) {
+        return <></>
+    }
     let res = []
     if (surfaces.length > 0) {
         res = surfaces.map(r => (

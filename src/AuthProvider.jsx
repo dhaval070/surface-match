@@ -11,10 +11,22 @@ const AuthContext = createContext();
 const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true)
-    // const [token, setToken] = useState(localStorage.getItem("site") || "");
     const navigate = useNavigate();
 
+    const api = axios.create()
+    api.defaults.withCredentials = true
+
+    api.interceptors.response.use(undefined, (err) => {
+        console.error("caught", err)
+        if (err.status == 401) {
+            setUser(null)
+            // navigate("/login")
+        }
+        throw err
+    })
+
     useEffect(() => {
+        setLoading(true)
         const fetchdata = async function() {
             const resp = await axios.get(apiurl + "/session")
             if (resp.data.username) {
@@ -34,28 +46,30 @@ const AuthProvider = ({ children }) => {
 
     const loginAction = async (data) => {
         try {
+          setLoading(true)
           const resp = await axios.post(apiurl + "/login", data);
           if (resp.data.error) {
               alert(resp.data.error)
               return
           }
           setUser(resp.data.username);
-          // setToken(res.token);
-          // localStorage.setItem("site", res.token);
           navigate("/");
         } catch (err) {
           console.error(err);
+        } finally {
+            setLoading(false)
         }
     };
 
     const logOut = () => {
+        setLoading(true)
         axios.get(apiurl + "/logout").then(() => {
             setUser(null);
             navigate("/login");
-        }).catch((e) => alert(e))
+        }).catch((e) => alert(e)).finally(() => setLoading(false))
     };
 
-    return <AuthContext.Provider value={{loading, user, loginAction, logOut}}>{children}</AuthContext.Provider>;
+    return <AuthContext.Provider value={{api, loading, user, loginAction, logOut}}>{children}</AuthContext.Provider>;
 };
 
 AuthProvider.propTypes = {

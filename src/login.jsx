@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Input, Button } from '@headlessui/react'
 import { useAuth } from './AuthProvider.jsx'
 import { useNavigate } from "react-router-dom";
@@ -20,20 +20,24 @@ export default function Login() {
         auth.loginAction(input)
     }
 
-    if (auth.loading) {
-        return <div>Loading</div>
-    }
+    useEffect(() => {
+        if (auth.user != null) {
+            navigate("/")
+        }
 
-    if (auth.user != null) {
-        navigate("/")
-        return <></>
-    }
+    }, [auth.user, navigate])
+
     const handleInput = (e) => {
         const { name, value } = e.target
         setInput((prev) => ({
             ...prev,
             [name]: value
         }))
+    }
+
+    console.info("auth loading", auth.loading)
+    if (auth.loading) {
+        return <div>Loading</div>
     }
 
     return (
