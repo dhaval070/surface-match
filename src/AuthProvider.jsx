@@ -49,10 +49,10 @@ const AuthProvider = ({ children }) => {
     };
 
     const logOut = () => {
-        setUser(null);
-        // setToken("");
-        // localStorage.removeItem("site");
-        navigate("/login");
+        axios.get(apiurl + "/logout").then(() => {
+            setUser(null);
+            navigate("/login");
+        }).catch((e) => alert(e))
     };
 
     return <AuthContext.Provider value={{loading, user, loginAction, logOut}}>{children}</AuthContext.Provider>;

@@ -87,7 +87,7 @@ export default function Home() {
       }
 
     return (
-      <div className="App w-fit">
+      <div className="App w-full">
 
       {isBusy &&
       <div className="w-full h-full fixed top-0 left-0 bg-white opacity-75 z-50">
@@ -110,7 +110,7 @@ export default function Home() {
         </div>
       </Field >
       <Field className="my-5">
-        <table className="table-auto bg-gray-100">
+        <table className="table-auto bg-gray-100 w-full">
         <tbody>
           <tr className="bg-slate-300">
               <th>Location</th><th>Address</th><th>Surface ID</th><th>Surface name</th><th></th>
