@@ -1,5 +1,6 @@
 import Home from './home.jsx'
 import Login from './login.jsx'
+import Mapping from './Mapping.jsx'
 import Layout from './Layout.jsx'
 import AuthProvider from './AuthProvider.jsx'
 import PrivateRoute from './PrivateRoute.jsx'
@@ -13,6 +14,7 @@ export default function App() {
                 <Route path="/login" element={<Login />} />
                 <Route element={<PrivateRoute />}>
                   <Route path="/" element={<Home />} />
+                  <Route path="/mappings" element={<Mapping />} />
                 </Route>
             </Route>
           </Routes>
