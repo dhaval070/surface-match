@@ -1,6 +1,7 @@
 import Home from './home.jsx'
 import Login from './login.jsx'
 import Mapping from './Mapping.jsx'
+import RAMPMapping from './RAMP-mappings.jsx'
 import Layout from './Layout.jsx'
 import AuthProvider from './AuthProvider.jsx'
 import PrivateRoute from './PrivateRoute.jsx'
@@ -15,6 +16,7 @@ export default function App() {
                 <Route element={<PrivateRoute />}>
                   <Route path="/" element={<Home />} />
                   <Route path="/mappings" element={<Mapping />} />
+                  <Route path="/ramp-mappings" element={<RAMPMapping />} />
                 </Route>
             </Route>
           </Routes>

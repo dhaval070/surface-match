@@ -28,6 +28,7 @@ export default function Layout() {
             <button className="rounded text-left bg-slate-400 py-2 px-4 text-sm  data-[hover]:bg-slate-500 data-[active]:bg-sky-700" onClick={() => navigate("/")}>Home</button>
             <button className="rounded text-left ml-10 bg-slate-400 py-2 px-4 text-sm  data-[hover]:bg-slate-500 data-[active]:bg-sky-700" onClick={report}>Surface Report</button>
             <button className="rounded text-left ml-10 bg-slate-400 py-2 px-4 text-sm  data-[hover]:bg-slate-500 data-[active]:bg-sky-700" onClick={mappings}>Mappings</button>
+            <button className="rounded text-left ml-10 bg-slate-400 py-2 px-4 text-sm  data-[hover]:bg-slate-500 data-[active]:bg-sky-700" onClick={() => navigate("/ramp-mappings")}>RAMP-Mappings</button>
         </div>
         <div className="justify-right">
             Hi, {auth.user} &nbsp;
