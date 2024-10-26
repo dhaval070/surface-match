@@ -9,6 +9,7 @@ SurfaceDialog.propTypes = {
     surfaceSelected: PropTypes.func,
     siteLoc: PropTypes.object,
     api: PropTypes.func,
+    province: PropTypes.string,
 }
 
 const apiurl = import.meta.env.VITE_API_URL
@@ -16,25 +17,36 @@ const apiurl = import.meta.env.VITE_API_URL
 export default function SurfaceDialog(props) {
     const [surfaces, setSurfaces] = useState([])
 
+    let province = ""
+
+    if (props.province) {
+        province = props.province
+    } else if (props.siteLoc) {
+        province = props.siteLoc.province_name
+    }
+
     useEffect(function() {
-        if (!props.api) return
-        props.api.get(apiurl + "/surfaces").then((res) => {
+        if (!props.api || !province) return
+        props.api.get(apiurl + "/surfaces", {
+            params: { province },
+        }).then((res) => {
             setSurfaces(res.data)
         }).catch(e => console.error(e))
-    },[props.api])
+    },[province, props.api])
 
-    if (!props.api) {
+    if (!props.api || !props.siteLoc) {
         return <></>
     }
+
     let res = []
     if (surfaces.length > 0) {
         res = surfaces.map(r => (
             <tr key={r.id}>
                 <td className="border"><a href="#" className="font-bold text-blue-600 hover:text-blue-400" onClick={() => props.surfaceSelected(r.id, props.siteLoc)} >{r.id}</a></td>
                 <td className="border">{r.name}</td>
-                <td className="border">{r.Location.name}</td>
-                <td className="border">{r.Location.address1}</td>
-                <td className="border">{r.Location.city}</td>
+                <td className="border">{r.location_name}</td>
+                <td className="border">{r.location_address1}</td>
+                <td className="border">{r.location_city}</td>
             </tr>
         ))
     }

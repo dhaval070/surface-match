@@ -90,7 +90,7 @@ export default function Home() {
       </div>
       }
 
-      <SurfaceDialog api={api} isOpen={isOpen} siteLoc={currSiteLoc} setIsOpen={setIsOpen} surfaceSelected={surfaceSelected} />
+      <SurfaceDialog province="Ontario" api={api} isOpen={isOpen} siteLoc={currSiteLoc} setIsOpen={setIsOpen} surfaceSelected={surfaceSelected} />
 
       <h1 className="text-3xl font-bold text-center">Match Surfaces</h1>
       <Field >
@@ -104,10 +104,13 @@ export default function Home() {
       </Field >
       <Field className="my-5">
         <table className="table-auto bg-gray-100 w-full">
+        <thead className="sticky top-0">
+            <tr className="bg-slate-300">
+                <th>Location</th><th>Address</th><th>Surface ID</th><th>Surface name</th><th></th>
+            </tr>
+
+        </thead>
         <tbody>
-          <tr className="bg-slate-300">
-              <th>Location</th><th>Address</th><th>Surface ID</th><th>Surface name</th><th></th>
-          </tr>
           {rows}
           </tbody>
         </table>

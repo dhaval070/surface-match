@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react'
 import './App.css'
 import { useAuth } from './AuthProvider.jsx'
 import SurfaceDialog from './surface-dialog.jsx'
-import { Field, Button } from '@headlessui/react'
+import {Select, Label, Field, Button } from '@headlessui/react'
 
 const apiurl = import.meta.env.VITE_API_URL
 
 export default function RAMPMapping() {
+    const [ allProvinces, setAllProvinces ] = useState(null)
+    const [ province, setProvince ] = useState(null)
     const [siteLoc, setSiteLoc] = useState([])
     const [currSiteLoc, setCurrSiteLoc] = useState(null)
     const [isBusy, setBusy] = useState(false)
@@ -25,6 +27,7 @@ export default function RAMPMapping() {
       api.post(apiurl + "/set-ramp-mapping", {
           rar_id: siteloc.rar_id,
           surface_id: id,
+          province: siteloc.province_name,
       }).then(resp => setSiteLoc(resp.data)).catch((e) => console.error(e)).finally(() => {
           setBusy(false)
       })
@@ -32,26 +35,29 @@ export default function RAMPMapping() {
 
     useEffect(function() {
         setBusy(true)
-        api.get(apiurl + "/ramp-mappings").then((resp) => {
+        api.get(apiurl + "/ramp-provinces").then((resp) => setAllProvinces(resp.data)).catch((e) => alert(e)).finally(() => setBusy(false))
+    },[api]);
+
+    useEffect(function() {
+        if (!province) return
+
+        api.get(apiurl + "/ramp-mappings/" + province).then((resp) => {
           setSiteLoc(resp.data)
         }).catch(e => console.error(e)).finally(() => setBusy(false))
-    },[api]);
+    }, [api, province])
 
     let rows = []
 
     if (siteLoc.length > 0) {
          rows = siteLoc.map(r => (
-            <tr key={r.location} className="even:bg-gray-50 odd:bg-gray-200">
+            <tr key={r.rar_id} className="even:bg-gray-50 odd:bg-gray-200">
             <td className="text-left">{r.rar_id}</td>
-            <td className="text-left">{r.name}</td>
-            <td className="text-left">{r.abbr}</td>
+            <td className="text-left">{r.location}</td>
             <td className="text-left">{r.address}</td>
             <td className="text-left">{r.city}</td>
-            <td className="text-left">{r.prov}</td>
-            <td className="text-left">{r.pcode}</td>
+            <td className="text-left">{r.province_name}</td>
             <td className="text-left">{r.country}</td>
             <td className="text-left">{r.match_type}</td>
-            <td className="text-left">{r.location}</td>
             <td className="text-left">{r.surface_id}</td>
             <td className="text-left">{r.surface_name}</td>
             <td className="text-left">
@@ -80,30 +86,39 @@ export default function RAMPMapping() {
 
     <h1 className="text-3xl font-bold text-center">RAMP Mappings</h1>
     <Field >
+        <div className="flex justify-start ">
+              <Label  className="text-sm/6 font-medium ">Province</Label>&nbsp;&nbsp;
+            <Select onChange={(e) => setProvince(e.currentTarget.value)} className="rounded border-solid outline outline-gray-400 outline-2" >
+              <option value="">Select</option>
+              {
+                  allProvinces != null &&
+                  allProvinces.map(p => <option key={p}>{p}</option>)
+              }
+            </Select>
+        </div>
+
         </Field>
         <Field className="my-5">
           <table className="table-auto bg-gray-100 w-full">
-          <tbody>
+            <thead className="sticky top-0">
             <tr className="bg-slate-300">
                 <th>RARID</th>
                 <th>Name</th>
-                <th>Abbr</th>
                 <th>Address</th>
                 <th>City</th>
-                <th>Prov</th>
-                <th>Pcode</th>
+                <th>Province Name</th>
                 <th>Country</th>
                 <th>Match Type</th>
-                <th>Location</th>
                 <th>SurfaceID</th>
                 <th>Surface Name</th>
                 <th></th>
             </tr>
+            </thead>
+            <tbody>
             {rows}
             </tbody>
           </table>
         </Field >
       </div>
     )
-
 }
