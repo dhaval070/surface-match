@@ -16,6 +16,7 @@ const apiurl = import.meta.env.VITE_API_URL
 
 export default function SurfaceDialog(props) {
     const [surfaces, setSurfaces] = useState([])
+    const [isBusy, setBusy] = useState(false)
 
     let province = ""
 
@@ -27,11 +28,12 @@ export default function SurfaceDialog(props) {
 
     useEffect(function() {
         if (!props.api || !province) return
+        setBusy(true)
         props.api.get(apiurl + "/surfaces", {
             params: { province },
         }).then((res) => {
             setSurfaces(res.data)
-        }).catch(e => console.error(e))
+        }).catch(e => console.error(e)).finally(() => setBusy(false))
     },[province, props.api])
 
     if (!props.api || !props.siteLoc) {
@@ -49,6 +51,14 @@ export default function SurfaceDialog(props) {
                 <td className="border">{r.location_city}</td>
             </tr>
         ))
+    }
+
+    if (isBusy) {
+        return <div className="w-full h-full fixed top-0 left-0 bg-white opacity-75 z-50">
+          <div className="flex justify-center items-center mt-[50vh]">
+            <div className="fas fa-circle-notch fa-spin fa-5x text-violet-600"></div>
+          </div>
+        </div>
     }
     return (
         <>

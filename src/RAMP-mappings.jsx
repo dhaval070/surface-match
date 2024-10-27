@@ -40,6 +40,7 @@ export default function RAMPMapping() {
 
     useEffect(function() {
         if (!province) return
+        setBusy(true)
 
         api.get(apiurl + "/ramp-mappings/" + province).then((resp) => {
           setSiteLoc(resp.data)
