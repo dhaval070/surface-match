@@ -31,7 +31,7 @@ export default function Home() {
         setBusy(true)
         api.get(apiurl + "/sites").then((resp) => {
           setAllSites(resp.data)
-        }).catch(e => console.error(e)).finally(() => setBusy(false))
+        }).finally(() => setBusy(false))
     },[api])
 
 
@@ -61,6 +61,7 @@ export default function Home() {
                 <td className="text-left">{r.address}</td>
                 <td className="text-left">{r.surface_id}</td>
                 <td className="text-left">{r.LinkedSurface.name}</td>
+                <td className="text-left">{r.surface}</td>
                 <td className="text-left">
                   <Button className="rounded bg-sky-600 py-2 px-2 text-xs text-white data-[hover]:bg-sky-500 data-[active]:bg-sky-700" onClick={() => assignSurface(r)}>Change</Button>
                   &nbsp;&nbsp;
@@ -106,7 +107,7 @@ export default function Home() {
         <table className="table-auto bg-gray-100 w-full">
         <thead className="sticky top-0">
             <tr className="bg-slate-300">
-                <th>Location</th><th>Address</th><th>Surface ID</th><th>Surface name</th><th></th>
+                <th>Location</th><th>Address</th><th>Surface ID</th><th>Matched Surface name</th><th>Rink</th><th></th>
             </tr>
 
         </thead>
