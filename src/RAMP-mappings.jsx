@@ -85,7 +85,7 @@ export default function RAMPMapping() {
 
       <SurfaceDialog api={api} isOpen={isOpen} siteLoc={currSiteLoc} setIsOpen={setIsOpen} surfaceSelected={surfaceSelected} />
 
-    <h1 className="text-3xl font-bold text-center">RAMP Mappings</h1>
+    <h1 className="text-xl font-bold text-left mb-4">RAMP Mappings</h1>
     <Field >
         <div className="flex justify-start ">
               <Label  className="text-sm/6 font-medium ">Province</Label>&nbsp;&nbsp;

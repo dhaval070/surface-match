@@ -76,7 +76,7 @@ export default function Mapping() {
 
       <SurfaceDialog province="Ontario" api={api} isOpen={isOpen} siteLoc={currSiteLoc} setIsOpen={setIsOpen} surfaceSelected={surfaceSelected} />
 
-    <h1 className="text-3xl font-bold text-center">Static Mappings</h1>
+    <h1 className="text-xl font-bold text-left mb-4">Static Mappings</h1>
     <Field >
       <div className="flex justify-start ">
             <Label  className="text-sm/6 font-medium ">Site</Label>&nbsp;&nbsp;

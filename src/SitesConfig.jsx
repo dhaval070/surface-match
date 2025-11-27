@@ -7,9 +7,12 @@ const apiurl = import.meta.env.VITE_API_URL
 
 export default function SitesConfig() {
     const [sitesConfigs, setSitesConfigs] = useState([])
+    const [filteredConfigs, setFilteredConfigs] = useState([])
     const [isBusy, setBusy] = useState(false)
     const [isOpen, setIsOpen] = useState(false)
     const [editingConfig, setEditingConfig] = useState(null)
+    const [parserTypeFilter, setParserTypeFilter] = useState('')
+    const [parserTypes, setParserTypes] = useState([])
     const [formData, setFormData] = useState({
         site_name: '',
         display_name: '',
@@ -24,17 +27,30 @@ export default function SitesConfig() {
     const auth = useAuth()
     const api = auth.api
 
-    const parserTypes = ['day_details', 'day_details_parser1', 'day_details_parser2', 'month_based', 'group_based', 'custom', 'external']
-
     useEffect(function() {
         loadSitesConfigs()
+        loadParserTypes()
     }, [api])
+
+    useEffect(function() {
+        if (parserTypeFilter === '') {
+            setFilteredConfigs(sitesConfigs)
+        } else {
+            setFilteredConfigs(sitesConfigs.filter(config => config.parser_type === parserTypeFilter))
+        }
+    }, [parserTypeFilter, sitesConfigs])
 
     const loadSitesConfigs = () => {
         setBusy(true)
         api.get(apiurl + "/sites-config").then((resp) => {
             setSitesConfigs(resp.data || [])
         }).catch(e => console.error(e)).finally(() => setBusy(false))
+    }
+
+    const loadParserTypes = () => {
+        api.get(apiurl + "/parser-types").then((resp) => {
+            setParserTypes(resp.data || [])
+        }).catch(e => console.error(e))
     }
 
     const openCreateDialog = () => {
@@ -126,8 +142,8 @@ export default function SitesConfig() {
     }
 
     let rows = []
-    if (sitesConfigs.length > 0) {
-        rows = sitesConfigs.map(config => (
+    if (filteredConfigs.length > 0) {
+        rows = filteredConfigs.map(config => (
             <tr key={config.id} className="even:bg-gray-50 odd:bg-gray-200">
                 <td className="text-left px-2">{config.id}</td>
                 <td className="text-left px-2">{config.site_name}</td>
@@ -135,12 +151,11 @@ export default function SitesConfig() {
                 <td className="text-left px-2 max-w-xs truncate" title={config.base_url}>{config.base_url}</td>
                 <td className="text-left px-2">{config.parser_type}</td>
                 <td className="text-left px-2">{config.enabled ? 'Yes' : 'No'}</td>
-                <td className="text-left px-2">{config.scrape_frequency_hours || '-'}</td>
                 <td className="text-left px-2">{config.last_scraped_at || '-'}</td>
-                <td className="text-left px-2">
-                    <Button className="rounded bg-sky-600 py-1 px-2 text-xs text-white data-[hover]:bg-sky-500 data-[active]:bg-sky-700" onClick={() => openEditDialog(config)}>Edit</Button>
+                <td className="text-left px-2 whitespace-nowrap">
+                    <Button className="rounded bg-sky-600 py-2 px-2 text-xs text-white data-[hover]:bg-sky-500 data-[active]:bg-sky-700" onClick={() => openEditDialog(config)}>Edit</Button>
                     &nbsp;
-                    <Button className="rounded bg-red-600 py-1 px-2 text-xs text-white data-[hover]:bg-red-500 data-[active]:bg-red-700" onClick={() => handleDelete(config.id)}>Delete</Button>
+                    <Button className="rounded bg-red-600 py-2 px-2 text-xs text-white data-[hover]:bg-red-500 data-[active]:bg-red-700" onClick={() => handleDelete(config.id)}>Delete</Button>
                 </td>
             </tr>
         ))
@@ -275,9 +290,22 @@ export default function SitesConfig() {
                 </div>
             </Dialog>
 
-            <h1 className="text-3xl font-bold text-center mb-4">Sites Configuration</h1>
+            <h1 className="text-xl font-bold text-left mb-4">Sites Configuration</h1>
 
-            <div className="mb-4">
+            <div className="mb-4 flex justify-between items-center">
+                <Field className="flex items-center space-x-2">
+                    <Label className="text-sm font-medium">Parser Type</Label>
+                    <Select 
+                        value={parserTypeFilter} 
+                        onChange={(e) => setParserTypeFilter(e.target.value)}
+                        className="rounded border border-gray-300 px-3 py-2 text-sm"
+                    >
+                        <option value="">All</option>
+                        {parserTypes.map(type => (
+                            <option key={type} value={type}>{type}</option>
+                        ))}
+                    </Select>
+                </Field>
                 <Button className="rounded bg-emerald-600 py-2 px-4 text-sm text-white data-[hover]:bg-emerald-500 data-[active]:bg-emerald-700" onClick={openCreateDialog}>
                     Add New Site
                 </Button>
@@ -293,7 +321,6 @@ export default function SitesConfig() {
                             <th className="px-2">Base URL</th>
                             <th className="px-2">Parser Type</th>
                             <th className="px-2">Enabled</th>
-                            <th className="px-2">Freq (hrs)</th>
                             <th className="px-2">Last Scraped</th>
                             <th className="px-2">Actions</th>
                         </tr>

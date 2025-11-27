@@ -62,7 +62,7 @@ export default function Home() {
                 <td className="text-left">{r.surface_id}</td>
                 <td className="text-left">{r.LinkedSurface.name}</td>
                 <td className="text-left">{r.surface}</td>
-                <td className="text-left">
+                <td className="text-left whitespace-nowrap w-48">
                   <Button className="rounded bg-sky-600 py-2 px-2 text-xs text-white data-[hover]:bg-sky-500 data-[active]:bg-sky-700" onClick={() => assignSurface(r)}>Change</Button>
                   &nbsp;&nbsp;
                   { r.surface_id != 0 &&
@@ -76,7 +76,7 @@ export default function Home() {
       let options = []
       if (allSites.length > 0) {
           options = allSites.map((r) => (
-              <option key={r.site}>{r.site}</option>
+              <option key={r.site_name} value={r.site_name}>{r.display_name || r.site_name}</option>
           ))
       }
 
@@ -93,21 +93,21 @@ export default function Home() {
 
       <SurfaceDialog province="Ontario" api={api} isOpen={isOpen} siteLoc={currSiteLoc} setIsOpen={setIsOpen} surfaceSelected={surfaceSelected} />
 
-      <h1 className="text-3xl font-bold text-center">Match Surfaces</h1>
+      <h1 className="text-xl font-bold text-left mb-4">Match Surfaces</h1>
       <Field >
-        <div className="flex justify-start ">
-              <Label  className="text-sm/6 font-medium ">Site</Label>&nbsp;&nbsp;
-            <Select onChange={(e) => setSite(e.currentTarget.value)} className="rounded border-solid outline outline-gray-400 outline-2" >
+        <div className="flex justify-start items-center">
+              <Label className="text-sm/6 font-medium">Site</Label>&nbsp;&nbsp;
+            <Select onChange={(e) => setSite(e.currentTarget.value)} className="rounded border-solid outline outline-gray-400 outline-2 w-64" >
               <option value="">Select</option>
               {options}
             </Select>
         </div>
       </Field >
       <Field className="my-5">
-        <table className="table-auto bg-gray-100 w-full">
+        <table className="bg-gray-100 w-full">
         <thead className="sticky top-0">
             <tr className="bg-slate-300">
-                <th>Location</th><th>Address</th><th>Surface ID</th><th>Matched Surface name</th><th>Rink</th><th></th>
+                <th>Location</th><th>Address</th><th>Surface ID</th><th>Matched Surface name</th><th>Rink</th><th className="w-48">Actions</th>
             </tr>
 
         </thead>
