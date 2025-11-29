@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import './App.css'
 import { useAuth } from './AuthProvider.jsx'
+import LocationSurfacesDialog from './LocationSurfacesDialog.jsx'
 
 const apiurl = import.meta.env.VITE_API_URL
 
@@ -25,6 +26,9 @@ export default function Locations() {
     const [pageSize, setPageSize] = useState(10)
     const [nameFilter, setNameFilter] = useState('');
     const [postalCodeFilter, setPostalCodeFilter] = useState('');
+
+    const [showSurfacesDialog, setShowSurfacesDialog] = useState(false);
+    const [selectedLocationForSurfaces, setSelectedLocationForSurfaces] = useState(null);
 
     const debouncedNameFilter = useDebounce(nameFilter, 500);
     const debouncedPostalCodeFilter = useDebounce(postalCodeFilter, 500);
@@ -68,6 +72,17 @@ export default function Locations() {
               <td className="text-left px-4 py-2">{r.address1}</td>
               <td className="text-left px-4 py-2">{r.postal_code}</td>
               <td className="text-left px-4 py-2">{r.city}</td>
+              <td className="text-left px-4 py-2">
+                <button
+                  onClick={() => {
+                    setSelectedLocationForSurfaces(r);
+                    setShowSurfacesDialog(true);
+                  }}
+                  className="px-2 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+                >
+                  View Surfaces
+                </button>
+              </td>
             </tr>
         ))
     }
@@ -161,6 +176,7 @@ export default function Locations() {
                 <th className="px-4 py-2">Address1</th>
                 <th className="px-4 py-2">Postal Code</th>
                 <th className="px-4 py-2">City</th>
+                <th className="px-4 py-2">Surfaces</th>
             </tr>
           </thead>
           <tbody>
@@ -168,6 +184,15 @@ export default function Locations() {
           </tbody>
         </table>
       </div>
+
+      {selectedLocationForSurfaces && (
+          <LocationSurfacesDialog
+              isOpen={showSurfacesDialog}
+              setIsOpen={setShowSurfacesDialog}
+              locationName={selectedLocationForSurfaces.name}
+              surfaces={selectedLocationForSurfaces.surfaces}
+          />
+      )}
 
       {pagination && totalPages > 1 && (
         <div className="flex justify-between items-center my-4">
