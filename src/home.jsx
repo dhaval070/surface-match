@@ -59,9 +59,10 @@ export default function Home() {
               <tr key={r.location} className="even:bg-gray-50 odd:bg-gray-200">
                 <td className="text-left">{r.location}</td>
                 <td className="text-left">{r.address}</td>
+                <td className="text-left">{r.LiveBarnLocation.id}</td>
+                <td className="text-left">{r.LiveBarnLocation.name}</td>
                 <td className="text-left">{r.surface_id}</td>
                 <td className="text-left">{r.LinkedSurface.name}</td>
-                <td className="text-left">{r.surface}</td>
                 <td className="text-left whitespace-nowrap w-48">
                   <Button className="rounded bg-sky-600 py-2 px-2 text-xs text-white data-[hover]:bg-sky-500 data-[active]:bg-sky-700" onClick={() => assignSurface(r)}>Change</Button>
                   &nbsp;&nbsp;
@@ -101,13 +102,19 @@ export default function Home() {
               <option value="">Select</option>
               {options}
             </Select>
+            {site && <span className="ml-4 text-sm font-medium">Selected: {site}</span>}
         </div>
       </Field >
       <Field className="my-5">
         <table className="bg-gray-100 w-full">
         <thead className="sticky top-0">
             <tr className="bg-slate-300">
-                <th>Location</th><th>Address</th><th>Surface ID</th><th>Matched Surface name</th><th>Rink</th><th className="w-48">Actions</th>
+                <th>Location</th><th>Address</th>
+                <th>Livebarn Location ID</th>
+                <th>Livebarn Location Name</th>
+                <th>Surface ID</th>
+                <th>Surface Name</th>
+                <th className="w-48">Actions</th>
             </tr>
 
         </thead>

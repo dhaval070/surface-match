@@ -101,7 +101,7 @@ export default function SitesConfig() {
         const payload = {
             site_name: formData.site_name,
             display_name: formData.display_name || null,
-            base_url: formData.base_url,
+            base_url: formData.base_url || null,
             home_team: formData.home_team || null,
             parser_type: formData.parser_type,
             parser_config: parsedConfig,
@@ -202,9 +202,8 @@ export default function SitesConfig() {
                             </Field>
 
                             <Field>
-                                <Label className="text-sm font-medium">Base URL *</Label>
+                                <Label className="text-sm font-medium">Base URL</Label>
                                 <Input
-                                    required
                                     type="url"
                                     value={formData.base_url}
                                     onChange={(e) => handleChange('base_url', e.target.value)}
