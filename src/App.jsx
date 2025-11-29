@@ -6,6 +6,7 @@ import Layout from './Layout.jsx'
 import AuthProvider from './AuthProvider.jsx'
 import PrivateRoute from './PrivateRoute.jsx'
 import SitesConfig from './SitesConfig.jsx'
+import Locations from './Locations.jsx'
 
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 
@@ -20,6 +21,7 @@ export default function App() {
                   <Route path="/mappings" element={<Mapping />} />
                   <Route path="/ramp-mappings" element={<RAMPMapping />} />
                   <Route path="/sites-config" element={<SitesConfig />} />
+                  <Route path="/locations" element={<Locations />} />
                 </Route>
             </Route>
           </Routes>

@@ -49,6 +49,9 @@ export default function Layout() {
                         <button className={navLinkClass("/sites-config")} onClick={() => navigate("/sites-config")}>
                             Sites Config
                         </button>
+                        <button className={navLinkClass("/locations")} onClick={() => navigate("/locations")}>
+                            Live Barn Locations
+                        </button>
                     </div>
                     <div className="flex items-center space-x-4">
                         <span className="text-sm text-gray-600">Hi, <span className="font-semibold text-gray-800">{auth.user}</span></span>
