@@ -221,7 +221,7 @@ export default function SitesConfig() {
                             </Field>
 
                             <Field>
-                                <Label className="text-sm font-medium">Parser Type *</Label>
+                                <Label className="text-sm font-medium whitespace-nowrap">Parser Type *</Label>
                                 <Select
                                     required
                                     value={formData.parser_type}
