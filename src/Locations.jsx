@@ -172,7 +172,7 @@ export default function Locations() {
           <thead className="sticky top-0">
             <tr className="bg-slate-300">
                 <th className="px-4 py-2">ID</th>
-                <th className="px-4 py-2">Name</th>
+                <th className="px-4 py-2">Name <span className="text-sm">↑</span></th>
                 <th className="px-4 py-2">Address1</th>
                 <th className="px-4 py-2">Postal Code</th>
                 <th className="px-4 py-2">City</th>
