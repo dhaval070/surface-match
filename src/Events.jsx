@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import './App.css'
-import { Field, Label, Select } from '@headlessui/react'
+import { Field, Label, Select, Button } from '@headlessui/react'
 import { useAuth } from './AuthProvider.jsx'
+import SurfaceDialog from './surface-dialog.jsx'
 
 const apiurl = import.meta.env.VITE_API_URL
 
@@ -28,6 +29,12 @@ export default function Events() {
     const [allSites, setAllSites] = useState([])
     const [startDate, setStartDate] = useState("")
     const [endDate, setEndDate] = useState("")
+    const [showSurfaceDialog, setShowSurfaceDialog] = useState(false)
+    const [selectedEvent, setSelectedEvent] = useState(null)
+    const [showConfirmDialog, setShowConfirmDialog] = useState(false)
+    const [selectedSurfaceId, setSelectedSurfaceId] = useState(null)
+    const [apiMessage, setApiMessage] = useState(null)
+    const [isUnsetAction, setIsUnsetAction] = useState(false)
 
     const debouncedSite = useDebounce(site, 500);
     const debouncedStartDate = useDebounce(startDate, 500);
@@ -71,6 +78,66 @@ export default function Events() {
         }).finally(() => setBusy(false))
     },[api, currentPage, pageSize, debouncedSite, debouncedStartDate, debouncedEndDate]);
 
+    const handleSetSurface = (event) => {
+        setSelectedEvent(event);
+        setIsUnsetAction(false);
+        setShowSurfaceDialog(true);
+    };
+
+    const surfaceSelected = (surfaceId, eventData) => {
+        setShowSurfaceDialog(false);
+        setSelectedSurfaceId(surfaceId);
+        setShowConfirmDialog(true);
+    };
+
+    const handleUpdateSurface = (updateFuture) => {
+        setShowConfirmDialog(false);
+        setBusy(true);
+        
+        api.put(`${apiurl}/events/${selectedEvent.id}`, {
+            surface_id: selectedSurfaceId,
+            update_future: updateFuture
+        }).then((resp) => {
+            if (resp.data && resp.data.message) {
+                setApiMessage(resp.data.message);
+                setTimeout(() => setApiMessage(null), 5000);
+            }
+            // Refresh events list
+            const params = new URLSearchParams({
+                page: currentPage,
+                perPage: pageSize,
+            });
+            if (debouncedSite) {
+                params.append('site', debouncedSite);
+            }
+            if (debouncedStartDate) {
+                params.append('start_date', debouncedStartDate);
+            }
+            if (debouncedEndDate) {
+                params.append('end_date', debouncedEndDate);
+            }
+            return api.get(`${apiurl}/events?${params.toString()}`);
+        }).then((resp) => {
+            if (resp) {
+                setEvents(resp.data.data);
+                setPagination(resp.data);
+            }
+        }).catch(e => {
+            console.error("API Error:", e);
+            if (e.response && e.response.data && e.response.data.message) {
+                setApiMessage(e.response.data.message);
+                setTimeout(() => setApiMessage(null), 5000);
+            }
+        }).finally(() => setBusy(false));
+    };
+
+    const handleUnsetSurface = (event) => {
+        setSelectedEvent(event);
+        setSelectedSurfaceId(0);
+        setIsUnsetAction(true);
+        setShowConfirmDialog(true);
+    };
+
     let rows = []
 
     if (events.length > 0) {
@@ -85,6 +152,25 @@ export default function Events() {
               <td className="text-left px-4 py-2">{r.location}</td>
               <td className="text-left px-4 py-2">{r.division}</td>
               <td className="text-left px-4 py-2">{r.surface_id}</td>
+              <td className="text-left px-4 py-2 whitespace-nowrap w-48">
+                <Button 
+                  className="rounded bg-sky-600 py-2 px-2 text-xs text-white data-[hover]:bg-sky-500 data-[active]:bg-sky-700" 
+                  onClick={() => handleSetSurface(r)}
+                  title="Update Surface"
+                >
+                  Change
+                </Button>
+                &nbsp;&nbsp;
+                { r.surface_id != 0 &&
+                <Button 
+                  className="rounded bg-emerald-600 py-2 px-2 text-xs text-white data-[hover]:bg-emerald-500 data-[active]:bg-emerald-700" 
+                  onClick={() => handleUnsetSurface(r)}
+                  title="Unset Surface"
+                >
+                  Unset
+                </Button>
+                }
+              </td>
             </tr>
         ))
     }
@@ -131,6 +217,44 @@ export default function Events() {
         </div>
       </div>
       }
+
+      <SurfaceDialog 
+        province="Ontario" 
+        api={api} 
+        isOpen={showSurfaceDialog} 
+        siteLoc={selectedEvent ? { location: selectedEvent.location } : null} 
+        setIsOpen={setShowSurfaceDialog} 
+        surfaceSelected={surfaceSelected} 
+      />
+
+      {showConfirmDialog && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md">
+            <h3 className="text-lg font-bold mb-4">Update Future Events?</h3>
+            <p className="mb-6">Do you want to update future events for this location as well?</p>
+            <div className="flex gap-4 justify-end">
+              <Button 
+                className="rounded bg-gray-300 py-2 px-4 text-sm text-gray-800 hover:bg-gray-400"
+                onClick={() => handleUpdateSurface(false)}
+              >
+                No, Only This Event
+              </Button>
+              <Button 
+                className="rounded bg-blue-600 py-2 px-4 text-sm text-white hover:bg-blue-500"
+                onClick={() => handleUpdateSurface(true)}
+              >
+                Yes, Update Future Events
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {apiMessage && (
+        <div className="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
+          {apiMessage}
+        </div>
+      )}
 
       <h1 className="text-xl font-bold text-left mb-4">Events</h1>
       
@@ -212,6 +336,7 @@ export default function Events() {
                 <th className="px-4 py-2">Location</th>
                 <th className="px-4 py-2">Division</th>
                 <th className="px-4 py-2">Surface ID</th>
+                <th className="px-4 py-2">Surface</th>
             </tr>
           </thead>
           <tbody>
