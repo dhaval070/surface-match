@@ -9,6 +9,7 @@ import SitesConfig from './SitesConfig.jsx'
 import Locations from './Locations.jsx'
 import Events from './Events.jsx'
 import SurfaceReport from './SurfaceReport.jsx'
+import Users from './Users.jsx'
 
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 
@@ -26,6 +27,7 @@ export default function App() {
                   <Route path="/locations" element={<Locations />} />
                   <Route path="/events" element={<Events />} />
                   <Route path="/report" element={<SurfaceReport />} />
+                  <Route path="/users" element={<Users />} />
                 </Route>
             </Route>
           </Routes>

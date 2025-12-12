@@ -52,6 +52,9 @@ export default function Layout() {
                         <button className={navLinkClass("/events")} onClick={() => navigate("/events")}>
                             Events
                         </button>
+                        <button className={navLinkClass("/users")} onClick={() => navigate("/users")}>
+                            Users
+                        </button>
                     </div>
                     <div className="flex items-center space-x-4">
                         <span className="text-sm text-gray-600">Hi, <span className="font-semibold text-gray-800">{auth.user}</span></span>
