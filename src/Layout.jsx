@@ -13,10 +13,7 @@ export default function Layout() {
         auth.logOut()
     }
 
-    const apiurl = import.meta.env.VITE_API_URL
-    const report = () => {
-        window.open(apiurl + "/report")
-    }
+
 
     const isActive = (path) => {
         return location.pathname === path;
@@ -37,7 +34,7 @@ export default function Layout() {
                         <button className={navLinkClass("/")} onClick={() => navigate("/")}>
                             Home
                         </button>
-                        <button className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-blue-700 hover:bg-blue-50 rounded-md transition-colors" onClick={report}>
+                        <button className={navLinkClass("/report")} onClick={() => navigate("/report")}>
                             Surface Report
                         </button>
                         <button className={navLinkClass("/mappings")} onClick={() => navigate("/mappings")}>
