@@ -83,7 +83,13 @@ export default function SurfaceReport() {
     };
 
     const handleExport = () => {
-        window.open(`${apiurl}/report/download`, '_blank');
+        const params = new URLSearchParams();
+        if (debouncedLocationNameFilter) {
+            params.append('location_name', debouncedLocationNameFilter);
+        }
+        const queryString = params.toString();
+        const url = queryString ? `${apiurl}/report/download?${queryString}` : `${apiurl}/report/download`;
+        window.open(url, '_blank');
     };
 
     const handleLocationClick = (item) => {
