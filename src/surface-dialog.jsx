@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import {  Button } from '@headlessui/react'
+import {  Button, Field, Label, Select } from '@headlessui/react'
 import { Description, Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
 import PropTypes from 'prop-types';
 
@@ -17,24 +17,38 @@ const apiurl = import.meta.env.VITE_API_URL
 export default function SurfaceDialog(props) {
     const [surfaces, setSurfaces] = useState([])
     const [isBusy, setBusy] = useState(false)
+    const [provinces, setProvinces] = useState([])
+    const [selectedProvince, setSelectedProvince] = useState("")
 
-    let province = ""
+    let defaultProvince = ""
 
     if (props.province) {
-        province = props.province
+        defaultProvince = props.province
     } else if (props.siteLoc) {
-        province = props.siteLoc.province_name
+        defaultProvince = props.siteLoc.province_name
     }
 
     useEffect(function() {
-        if (!props.api || !province) return
+        if (!props.api) return
+        props.api.get(apiurl + "/provinces")
+            .then((res) => {
+                setProvinces(res.data)
+                if (defaultProvince) {
+                    setSelectedProvince(defaultProvince)
+                }
+            })
+            .catch(e => console.error(e))
+    }, [props.api, defaultProvince])
+
+    useEffect(function() {
+        if (!props.api || !selectedProvince) return
         setBusy(true)
         props.api.get(apiurl + "/surfaces", {
-            params: { province },
+            params: { province: selectedProvince },
         }).then((res) => {
             setSurfaces(res.data)
         }).catch(e => console.error(e)).finally(() => setBusy(false))
-    },[province, props.api])
+    },[selectedProvince, props.api])
 
     if (!props.api || !props.siteLoc) {
         return <></>
@@ -70,6 +84,20 @@ export default function SurfaceDialog(props) {
                             Select surface for <span className="text-orange-500">{props.siteLoc && props.siteLoc.location}</span>
                         </DialogTitle>
                         <Description></Description>
+
+                        <Field>
+                            <Label className="text-sm/6 font-medium">Province</Label>
+                            <Select 
+                                className="mt-1 block w-full rounded-lg border border-gray-300 bg-white py-1.5 px-3 text-sm/6"
+                                value={selectedProvince}
+                                onChange={(e) => setSelectedProvince(e.target.value)}
+                            >
+                                <option value="">Select a province</option>
+                                {provinces.map(p => (
+                                    <option key={p.id} value={p.province_name}>{p.province_name}</option>
+                                ))}
+                            </Select>
+                        </Field>
 
                         <table className="table-auto w-full border">
                             <thead className="sticky top-0">
