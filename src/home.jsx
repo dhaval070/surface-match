@@ -52,6 +52,18 @@ export default function Home() {
       })
     }
 
+    let unsetMapping = function(type, siteloc, doNotFill = false) {
+      setBusy(true)
+      api.post(apiurl + "/unset-mapping", {
+          site: site,
+          location: siteloc.location,
+          type: type,
+          do_not_fill: doNotFill,
+      }).then(resp => setSiteLoc(resp.data)).catch((e) => console.error(e)).finally(() => {
+          setBusy(false)
+      })
+    }
+
       let rows = []
 
       if (siteLoc.length > 0) {
@@ -59,15 +71,33 @@ export default function Home() {
               <tr key={r.location} className="even:bg-gray-50 odd:bg-gray-200">
                 <td className="text-left">{r.location}</td>
                 <td className="text-left">{r.address}</td>
-                <td className="text-left">{r.LiveBarnLocation.id}</td>
+                <td className="text-left">
+                  <div className="flex justify-between items-center">
+                    <span>{r.location_id}</span>
+                    {r.location_id != -1 && (
+                      <Button className="rounded bg-red-600 py-1 px-2 text-xs text-white data-[hover]:bg-red-500 data-[active]:bg-red-700" onClick={() => unsetMapping('location', r, true)}>Dnf</Button>
+                    )}
+                  </div>
+                </td>
                 <td className="text-left">{r.LiveBarnLocation.name}</td>
-                <td className="text-left">{r.surface_id}</td>
+                <td className="text-left">
+                  <div className="flex justify-between items-center">
+                    <span>{r.surface_id}</span>
+                    {r.surface_id != -1 && (
+                      <Button className="rounded bg-red-600 py-1 px-2 text-xs text-white data-[hover]:bg-red-500 data-[active]:bg-red-700" onClick={() => unsetMapping('surface', r, true)}>Dnf</Button>
+                    )}
+                  </div>
+                </td>
                 <td className="text-left">{r.LinkedSurface.name}</td>
                 <td className="text-left whitespace-nowrap w-48">
                   <Button className="rounded bg-sky-600 py-2 px-2 text-xs text-white data-[hover]:bg-sky-500 data-[active]:bg-sky-700" onClick={() => assignSurface(r)}>Change</Button>
                   &nbsp;&nbsp;
-                  { r.surface_id != 0 &&
-                  <Button className="rounded bg-emerald-600 py-2 px-2 text-xs text-white data-[hover]:bg-emerald-500 data-[active]:bg-emerald-700" onClick={() => surfaceSelected(0, r)}>Unset</Button>
+                  { r.surface_id != 0 && !(r.location_id == -1 && r.surface_id == -1) &&
+                  <Button className="rounded bg-emerald-600 py-2 px-2 text-xs text-white data-[hover]:bg-emerald-500 data-[active]:bg-emerald-700" onClick={() => unsetMapping('surface', r)}>Reset Surface</Button>
+  }
+                  &nbsp;&nbsp;
+                  { r.location_id != 0 &&
+                  <Button className="rounded bg-amber-600 py-2 px-2 text-xs text-white data-[hover]:bg-amber-500 data-[active]:bg-amber-700" onClick={() => unsetMapping('location', r)}>Reset Location</Button>
   }
                 </td>
               </tr>
