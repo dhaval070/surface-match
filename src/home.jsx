@@ -22,17 +22,17 @@ export default function Home() {
             return
         }
         setBusy(true)
-        api.get(apiurl + "/site-locations/"+ site.toString()).then((resp) => {
-          setSiteLoc(resp.data)
+        api.get(apiurl + "/site-locations/" + site.toString()).then((resp) => {
+            setSiteLoc(resp.data)
         }).catch(e => console.error(e)).finally(() => setBusy(false))
-    },[site, api]);
+    }, [site, api]);
 
     useEffect(function() {
         setBusy(true)
         api.get(apiurl + "/sites").then((resp) => {
-          setAllSites(resp.data)
+            setAllSites(resp.data)
         }).finally(() => setBusy(false))
-    },[api])
+    }, [api])
 
 
     let assignSurface = function(rec) {
@@ -41,118 +41,111 @@ export default function Home() {
     }
 
     let surfaceSelected = function(id, siteloc) {
-      setIsOpen(false)
-      setBusy(true)
-      api.post(apiurl + "/set-surface", {
-          site: site,
-          location: siteloc.location,
-          surface_id: id,
-      }).then(resp => setSiteLoc(resp.data)).catch((e) => console.error(e)).finally(() => {
-          setBusy(false)
-      })
+        setIsOpen(false)
+        setBusy(true)
+        api.post(apiurl + "/set-surface", {
+            site: site,
+            location: siteloc.location,
+            surface_id: id,
+        }).then(resp => setSiteLoc(resp.data)).catch((e) => console.error(e)).finally(() => {
+            setBusy(false)
+        })
     }
 
-    let unsetMapping = function(type, siteloc, doNotFill = false) {
-      setBusy(true)
-      api.post(apiurl + "/unset-mapping", {
-          site: site,
-          location: siteloc.location,
-          type: type,
-          do_not_fill: doNotFill,
-      }).then(resp => setSiteLoc(resp.data)).catch((e) => console.error(e)).finally(() => {
-          setBusy(false)
-      })
+    let unsetMapping = function(type, siteloc) {
+        setBusy(true)
+        api.post(apiurl + "/unset-mapping", {
+            site: site,
+            location: siteloc.location,
+            type: type,
+        }).then(resp => setSiteLoc(resp.data)).catch((e) => console.error(e)).finally(() => {
+            setBusy(false)
+        })
     }
 
-      let rows = []
+    let rows = []
 
-      if (siteLoc.length > 0) {
-           rows = siteLoc.map(r => (
-              <tr key={r.location} className="even:bg-gray-50 odd:bg-gray-200">
+    if (siteLoc.length > 0) {
+        rows = siteLoc.map(r => (
+            <tr key={r.location} className="even:bg-gray-50 odd:bg-gray-200">
                 <td className="text-left">{r.location}</td>
                 <td className="text-left">{r.address}</td>
                 <td className="text-left">
-                  <div className="flex justify-between items-center">
-                    <span>{r.location_id}</span>
-                    {r.location_id != -1 && (
-                      <Button className="rounded bg-red-600 py-1 px-2 text-xs text-white data-[hover]:bg-red-500 data-[active]:bg-red-700" onClick={() => unsetMapping('location', r, true)}>Dnf</Button>
-                    )}
-                  </div>
+                    <div className="flex justify-between items-center">
+                        <span>{r.location_id}</span>
+                    </div>
                 </td>
                 <td className="text-left">{r.LiveBarnLocation.name}</td>
                 <td className="text-left">
-                  <div className="flex justify-between items-center">
-                    <span>{r.surface_id}</span>
-                    {r.surface_id != -1 && (
-                      <Button className="rounded bg-red-600 py-1 px-2 text-xs text-white data-[hover]:bg-red-500 data-[active]:bg-red-700" onClick={() => unsetMapping('surface', r, true)}>Dnf</Button>
-                    )}
-                  </div>
+                    <div className="flex justify-between items-center">
+                        <span>{r.surface_id}</span>
+                    </div>
                 </td>
                 <td className="text-left">{r.LinkedSurface.name}</td>
                 <td className="text-left whitespace-nowrap w-48">
-                  <Button className="rounded bg-sky-600 py-2 px-2 text-xs text-white data-[hover]:bg-sky-500 data-[active]:bg-sky-700" onClick={() => assignSurface(r)}>Change</Button>
-                  &nbsp;&nbsp;
-                  { r.surface_id != 0 && !(r.location_id == -1 && r.surface_id == -1) &&
-                  <Button className="rounded bg-emerald-600 py-2 px-2 text-xs text-white data-[hover]:bg-emerald-500 data-[active]:bg-emerald-700" onClick={() => unsetMapping('surface', r)}>Reset Surface</Button>
-  }
-                  &nbsp;&nbsp;
-                  { r.location_id != 0 &&
-                  <Button className="rounded bg-amber-600 py-2 px-2 text-xs text-white data-[hover]:bg-amber-500 data-[active]:bg-amber-700" onClick={() => unsetMapping('location', r)}>Reset Location</Button>
-  }
+                    <Button className="rounded bg-sky-600 py-2 px-2 text-xs text-white data-[hover]:bg-sky-500 data-[active]:bg-sky-700" onClick={() => assignSurface(r)}>Change</Button>
+                    &nbsp;&nbsp;
+                    {r.surface_id > 0 &&
+                        <Button className="rounded bg-emerald-600 py-2 px-2 text-xs text-white data-[hover]:bg-emerald-500 data-[active]:bg-emerald-700" onClick={() => unsetMapping('surface', r)}>Reset Surface</Button>
+                    }
+                    &nbsp;&nbsp;
+                    {r.location_id != 0 &&
+                        <Button className="rounded bg-amber-600 py-2 px-2 text-xs text-white data-[hover]:bg-amber-500 data-[active]:bg-amber-700" onClick={() => unsetMapping('location', r)}>Reset Location</Button>
+                    }
                 </td>
-              </tr>
-          ))
-      }
+            </tr>
+        ))
+    }
 
-      let options = []
-      if (allSites.length > 0) {
-          options = allSites.map((r) => (
-              <option key={r.site_name} value={r.site_name}>{r.display_name || r.site_name}</option>
-          ))
-      }
+    let options = []
+    if (allSites.length > 0) {
+        options = allSites.map((r) => (
+            <option key={r.site_name} value={r.site_name}>{r.display_name || r.site_name}</option>
+        ))
+    }
 
     return (
-      <div className="App w-full">
+        <div className="App w-full">
 
-      {isBusy &&
-      <div className="w-full h-full fixed top-0 left-0 bg-white opacity-75 z-50">
-        <div className="flex justify-center items-center mt-[50vh]">
-          <div className="fas fa-circle-notch fa-spin fa-5x text-violet-600"></div>
+            {isBusy &&
+                <div className="w-full h-full fixed top-0 left-0 bg-white opacity-75 z-50">
+                    <div className="flex justify-center items-center mt-[50vh]">
+                        <div className="fas fa-circle-notch fa-spin fa-5x text-violet-600"></div>
+                    </div>
+                </div>
+            }
+
+            <SurfaceDialog province="Ontario" api={api} isOpen={isOpen} siteLoc={currSiteLoc} setIsOpen={setIsOpen} surfaceSelected={surfaceSelected} />
+
+            <h1 className="text-xl font-bold text-left mb-4">Match Surfaces</h1>
+            <Field >
+                <div className="flex justify-start items-center">
+                    <Label className="text-sm/6 font-medium">Site</Label>&nbsp;&nbsp;
+                    <Select onChange={(e) => setSite(e.currentTarget.value)} className="rounded border-solid outline outline-gray-400 outline-2 w-64" >
+                        <option value="">Select</option>
+                        {options}
+                    </Select>
+                    {site && <span className="ml-4 text-sm font-medium">Selected: {site}</span>}
+                </div>
+            </Field >
+            <Field className="my-5">
+                <table className="bg-gray-100 w-full">
+                    <thead className="sticky top-0">
+                        <tr className="bg-slate-300">
+                            <th>Location</th><th>Address</th>
+                            <th>Livebarn Location ID</th>
+                            <th>Livebarn Location Name</th>
+                            <th>Surface ID</th>
+                            <th>Surface Name</th>
+                            <th className="w-48">Actions</th>
+                        </tr>
+
+                    </thead>
+                    <tbody>
+                        {rows}
+                    </tbody>
+                </table>
+            </Field >
         </div>
-      </div>
-      }
-
-      <SurfaceDialog province="Ontario" api={api} isOpen={isOpen} siteLoc={currSiteLoc} setIsOpen={setIsOpen} surfaceSelected={surfaceSelected} />
-
-      <h1 className="text-xl font-bold text-left mb-4">Match Surfaces</h1>
-      <Field >
-        <div className="flex justify-start items-center">
-              <Label className="text-sm/6 font-medium">Site</Label>&nbsp;&nbsp;
-            <Select onChange={(e) => setSite(e.currentTarget.value)} className="rounded border-solid outline outline-gray-400 outline-2 w-64" >
-              <option value="">Select</option>
-              {options}
-            </Select>
-            {site && <span className="ml-4 text-sm font-medium">Selected: {site}</span>}
-        </div>
-      </Field >
-      <Field className="my-5">
-        <table className="bg-gray-100 w-full">
-        <thead className="sticky top-0">
-            <tr className="bg-slate-300">
-                <th>Location</th><th>Address</th>
-                <th>Livebarn Location ID</th>
-                <th>Livebarn Location Name</th>
-                <th>Surface ID</th>
-                <th>Surface Name</th>
-                <th className="w-48">Actions</th>
-            </tr>
-
-        </thead>
-        <tbody>
-          {rows}
-          </tbody>
-        </table>
-      </Field >
-    </div>
     )
 }

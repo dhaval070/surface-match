@@ -84,6 +84,10 @@ export default function SurfaceDialog(props) {
                             Select surface for <span className="text-orange-500">{props.siteLoc && props.siteLoc.location}</span>
                         </DialogTitle>
                         <Description></Description>
+                        
+                        <div className="flex gap-2">
+                          <Button className="rounded bg-red-600 py-2 px-4 text-sm text-white data-[hover]:bg-red-500 data-[active]:bg-red-700" onClick={() => props.surfaceSelected(-1, props.siteLoc)}>Dnf</Button>
+                        </div>
 
                         <Field>
                             <Label className="text-sm/6 font-medium">Province</Label>
