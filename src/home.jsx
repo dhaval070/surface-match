@@ -17,9 +17,24 @@ export default function Home() {
     const [locations, setLocations] = useState([])
     const [showLocationsModal, setShowLocationsModal] = useState(false)
     const [locationModalSiteLoc, setLocationModalSiteLoc] = useState(null)
+    const [currentPage, setCurrentPage] = useState(1)
+    const [pageSize, setPageSize] = useState(25)
+    const [pagination, setPagination] = useState(null)
+    const [nameFilter, setNameFilter] = useState('')
+    const [debouncedNameFilter, setDebouncedNameFilter] = useState(nameFilter)
     const auth = useAuth()
     const api = auth.api
     const dropdownRef = useRef(null)
+
+    useEffect(() => {
+        const handler = setTimeout(() => setDebouncedNameFilter(nameFilter), 500)
+        return () => clearTimeout(handler)
+    }, [nameFilter])
+
+    useEffect(() => {
+        // reset to first page whenever filter changes
+        setCurrentPage(1)
+    }, [debouncedNameFilter])
 
     useEffect(function() {
         if (site == "") {
@@ -43,11 +58,14 @@ export default function Home() {
     useEffect(function() {
         if (!api || !showLocationsModal) return
         setBusy(true)
-        api.get(apiurl + "/locations", { params: { perPage: 200 } }).then((resp) => {
+        const params = { page: currentPage, perPage: pageSize }
+        if (debouncedNameFilter) params.name = debouncedNameFilter
+        api.get(apiurl + "/locations", { params }).then((resp) => {
             const data = resp.data && resp.data.data ? resp.data.data : resp.data
             setLocations(data || [])
+            setPagination(resp.data)
         }).catch(e => console.error(e)).finally(() => setBusy(false))
-    }, [api, showLocationsModal])
+    }, [api, showLocationsModal, currentPage, pageSize, debouncedNameFilter])
 
     useEffect(function() {
         function handleOutside(e) {
@@ -100,6 +118,15 @@ export default function Home() {
             setBusy(false)
         })
     }
+
+    const handlePrevPage = () => setCurrentPage(p => Math.max(1, p - 1))
+    const handleNextPage = () => setCurrentPage(p => p + 1)
+    const handleFirstPage = () => setCurrentPage(1)
+    const handleLastPage = () => {
+        const total = pagination ? Math.ceil(pagination.total / pagination.perPage) : 1
+        setCurrentPage(total)
+    }
+    const totalPages = pagination ? Math.ceil(pagination.total / pagination.perPage) : 1
 
     let unsetMapping = function(type, siteloc) {
         setBusy(true)
@@ -179,6 +206,11 @@ export default function Home() {
                         <DialogTitle className="font-bold">Select location for <span className="text-orange-500">{locationModalSiteLoc && locationModalSiteLoc.location}</span></DialogTitle>
                         <Description />
 
+                        <div className="flex items-center justify-between mb-2">
+                          <input type="text" value={nameFilter} onChange={e => setNameFilter(e.target.value)} placeholder="Filter by name..." className="px-2 py-1 border rounded-md w-64" />
+                          <div className="text-sm text-gray-600">Showing {pagination && pagination.total ? pagination.total : locations.length} results</div>
+                        </div>
+
                         <table className="table-auto w-full border">
                             <thead className="sticky top-0">
                                 <tr className="bg-gray-100">
@@ -196,6 +228,20 @@ export default function Home() {
                                 ))}
                             </tbody>
                         </table>
+
+                        {pagination && totalPages > 1 && (
+                          <div className="flex justify-between items-center my-2">
+                            <div className="flex gap-2">
+                              <button onClick={handleFirstPage} disabled={currentPage === 1 || isBusy} className="px-3 py-1 bg-gray-300 rounded disabled:opacity-50">First</button>
+                              <button onClick={handlePrevPage} disabled={currentPage === 1 || isBusy} className="px-3 py-1 bg-gray-300 rounded disabled:opacity-50">Previous</button>
+                            </div>
+                            <div>Page {currentPage} of {totalPages}</div>
+                            <div className="flex gap-2">
+                              <button onClick={handleNextPage} disabled={currentPage >= totalPages || isBusy} className="px-3 py-1 bg-gray-300 rounded disabled:opacity-50">Next</button>
+                              <button onClick={handleLastPage} disabled={currentPage >= totalPages || isBusy} className="px-3 py-1 bg-gray-300 rounded disabled:opacity-50">Last</button>
+                            </div>
+                          </div>
+                        )}
 
                         <div className="flex gap-4">
                           <Button className="rounded bg-sky-600 py-2 px-4 text-sm text-white data-[hover]:bg-sky-500 data-[active]:bg-sky-700" onClick={() => setShowLocationsModal(false)}>Cancel</Button>
