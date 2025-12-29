@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import './App.css'
-import { Field, Label, Select, Button } from '@headlessui/react'
+import { Field, Label, Select, Button, Description, Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
 import { useAuth } from './AuthProvider.jsx'
 import SurfaceDialog from './surface-dialog.jsx'
 
@@ -13,8 +13,13 @@ export default function Home() {
     const [isOpen, setIsOpen] = useState(false)
     const [currSiteLoc, setCurrSiteLoc] = useState(null)
     const [isBusy, setBusy] = useState(false)
+    const [selectorFor, setSelectorFor] = useState(null)
+    const [locations, setLocations] = useState([])
+    const [showLocationsModal, setShowLocationsModal] = useState(false)
+    const [locationModalSiteLoc, setLocationModalSiteLoc] = useState(null)
     const auth = useAuth()
     const api = auth.api
+    const dropdownRef = useRef(null)
 
     useEffect(function() {
         if (site == "") {
@@ -35,6 +40,38 @@ export default function Home() {
     }, [api])
 
 
+    useEffect(function() {
+        if (!api || !showLocationsModal) return
+        setBusy(true)
+        api.get(apiurl + "/locations", { params: { perPage: 200 } }).then((resp) => {
+            const data = resp.data && resp.data.data ? resp.data.data : resp.data
+            setLocations(data || [])
+        }).catch(e => console.error(e)).finally(() => setBusy(false))
+    }, [api, showLocationsModal])
+
+    useEffect(function() {
+        function handleOutside(e) {
+            if (!dropdownRef.current) return
+            if (!dropdownRef.current.contains(e.target)) {
+                setSelectorFor(null)
+            }
+        }
+        function handleKey(e) {
+            if (e.key === 'Escape') {
+                // close all popups/dialogs
+                setSelectorFor(null)
+                setIsOpen(false)
+                setShowLocationsModal(false)
+            }
+        }
+        document.addEventListener('mousedown', handleOutside)
+        document.addEventListener('keydown', handleKey)
+        return () => {
+            document.removeEventListener('mousedown', handleOutside)
+            document.removeEventListener('keydown', handleKey)
+        }
+    }, [dropdownRef, setIsOpen, setShowLocationsModal])
+
     let assignSurface = function(rec) {
         setCurrSiteLoc(rec)
         setIsOpen(true)
@@ -47,6 +84,18 @@ export default function Home() {
             site: site,
             location: siteloc.location,
             surface_id: id,
+        }).then(resp => setSiteLoc(resp.data)).catch((e) => console.error(e)).finally(() => {
+            setBusy(false)
+        })
+    }
+
+    let locationSelected = function(id, siteloc) {
+        setShowLocationsModal(false)
+        setBusy(true)
+        api.post(apiurl + "/set-location", {
+            site: site,
+            location: siteloc.location,
+            location_id: id,
         }).then(resp => setSiteLoc(resp.data)).catch((e) => console.error(e)).finally(() => {
             setBusy(false)
         })
@@ -83,9 +132,15 @@ export default function Home() {
                 </td>
                 <td className="text-left">{r.LinkedSurface.name}</td>
                 <td className="text-left whitespace-nowrap w-48">
-                    <Button className="rounded bg-sky-600 py-2 px-2 text-xs text-white data-[hover]:bg-sky-500 data-[active]:bg-sky-700" onClick={() => assignSurface(r)}>Change</Button>
+                    <div className="relative inline-block overflow-visible" ref={selectorFor === r.location ? dropdownRef : null}>
+                        <Button className="rounded bg-sky-600 py-2 px-2 text-xs text-white data-[hover]:bg-sky-500 data-[active]:bg-sky-700" onClick={() => setSelectorFor(selectorFor === r.location ? null : r.location)}>Change</Button>
+                        {selectorFor === r.location && <div className="absolute right-0 mt-1 w-36 bg-white border rounded shadow-md flex flex-col" style={{ zIndex: 9999 }}>
+                            <button className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100" onClick={() => { setSelectorFor(null); assignSurface(r); }}>Surface</button>
+                            <button className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100" onClick={() => { setSelectorFor(null); setLocationModalSiteLoc(r); setShowLocationsModal(true); }}>Location</button>
+                        </div>}
+                    </div>
                     &nbsp;&nbsp;
-                    {r.surface_id > 0 &&
+                    {r.surface_id != 0 &&
                         <Button className="rounded bg-emerald-600 py-2 px-2 text-xs text-white data-[hover]:bg-emerald-500 data-[active]:bg-emerald-700" onClick={() => unsetMapping('surface', r)}>Reset Surface</Button>
                     }
                     &nbsp;&nbsp;
@@ -116,6 +171,39 @@ export default function Home() {
             }
 
             <SurfaceDialog province="Ontario" api={api} isOpen={isOpen} siteLoc={currSiteLoc} setIsOpen={setIsOpen} surfaceSelected={surfaceSelected} />
+
+            <Dialog open={showLocationsModal} onClose={() => setShowLocationsModal(false)} className="relative z-50">
+                <div className="fixed inset-0 flex w-screen justify-center bg-white p-4">
+                  <div className="flex items-center justify-center ">
+                      <DialogPanel className=" w-max  h-full overflow-auto  space-y-2 border bg-white p-2">
+                        <DialogTitle className="font-bold">Select location for <span className="text-orange-500">{locationModalSiteLoc && locationModalSiteLoc.location}</span></DialogTitle>
+                        <Description />
+
+                        <table className="table-auto w-full border">
+                            <thead className="sticky top-0">
+                                <tr className="bg-gray-100">
+                                    <th>ID</th><th>Name</th><th>City</th><th>Postal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {locations && locations.map(l => (
+                                    <tr key={l.id}>
+                                        <td className="border"><a href="#" className="font-bold text-blue-600 hover:text-blue-400" onClick={() => locationSelected(l.id, locationModalSiteLoc)}>{l.id}</a></td>
+                                        <td className="border">{l.name}</td>
+                                        <td className="border">{l.city}</td>
+                                        <td className="border">{l.postal_code}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+
+                        <div className="flex gap-4">
+                          <Button className="rounded bg-sky-600 py-2 px-4 text-sm text-white data-[hover]:bg-sky-500 data-[active]:bg-sky-700" onClick={() => setShowLocationsModal(false)}>Cancel</Button>
+                        </div>
+                      </DialogPanel>
+                  </div>
+                </div>
+            </Dialog>
 
             <h1 className="text-xl font-bold text-left mb-4">Match Surfaces</h1>
             <Field >
