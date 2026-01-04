@@ -22,20 +22,38 @@ export default function RinkReport() {
     const [total, setTotal] = useState(0);
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
+    const [rink, setRink] = useState("");
+    const [province, setProvince] = useState("");
+    const [city, setCity] = useState("");
+    const [provinces, setProvinces] = useState([]);
 
     const debouncedStartDate = useDebounce(startDate, 500);
     const debouncedEndDate = useDebounce(endDate, 500);
+    const debouncedRink = useDebounce(rink, 500);
+    const debouncedCity = useDebounce(city, 500);
 
     const auth = useAuth();
     const api = auth.api;
 
     useEffect(() => {
+        const fetchProvinces = async () => {
+            try {
+                const resp = await api.get(`${apiurl}/provinces`);
+                setProvinces(resp.data || []);
+            } catch (err) {
+                console.error("Error fetching provinces:", err);
+            }
+        };
+        fetchProvinces();
+    }, [api]);
+
+    useEffect(() => {
         setPage(1);
-    }, [debouncedStartDate, debouncedEndDate, perPage]);
+    }, [debouncedStartDate, debouncedEndDate, debouncedRink, debouncedCity, province, perPage]);
 
     useEffect(() => {
         fetchReport();
-    }, [page, perPage, debouncedStartDate, debouncedEndDate, api]);
+    }, [page, perPage, debouncedStartDate, debouncedEndDate, debouncedRink, debouncedCity, province, api]);
 
     const fetchReport = async () => {
         setLoading(true);
@@ -45,6 +63,9 @@ export default function RinkReport() {
         });
         if (debouncedStartDate) params.append('start_date', debouncedStartDate);
         if (debouncedEndDate) params.append('end_date', debouncedEndDate);
+        if (debouncedRink) params.append('rink', debouncedRink);
+        if (province) params.append('province', province);
+        if (debouncedCity) params.append('city', debouncedCity);
 
         try {
             const resp = await api.get(`${apiurl}/rink-report?${params.toString()}`);
@@ -70,7 +91,22 @@ export default function RinkReport() {
     const handleClearFilters = () => {
         setStartDate('');
         setEndDate('');
+        setRink('');
+        setProvince('');
+        setCity('');
         setPage(1);
+    };
+
+    const handleExport = () => {
+        const params = new URLSearchParams();
+        if (debouncedStartDate) params.append('start_date', debouncedStartDate);
+        if (debouncedEndDate) params.append('end_date', debouncedEndDate);
+        if (debouncedRink) params.append('rink', debouncedRink);
+        if (province) params.append('province', province);
+        if (debouncedCity) params.append('city', debouncedCity);
+        params.append('export', '1');
+        const url = `${apiurl}/rink-report?${params.toString()}`;
+        window.open(url, '_blank');
     };
 
     const totalPages = Math.ceil(total / perPage);
@@ -88,34 +124,71 @@ export default function RinkReport() {
             </div>
 
             <div className="flex justify-between items-center my-4 p-4 bg-gray-50 rounded-lg">
-                <div className="flex gap-4 items-center">
-                    <div className="flex items-center gap-2">
-                        <label className="text-sm font-medium">From</label>
-                        <input
-                            type="date"
-                            value={startDate}
-                            onChange={(e) => setStartDate(e.target.value)}
-                            className="px-2 py-1 border border-gray-300 rounded-md"
-                            placeholder="Start Date"
-                        />
+                <div className="flex flex-col gap-2">
+                    <div className="flex gap-4 items-center">
+                        <div className="flex items-center gap-2">
+                            <label className="text-sm font-medium">From</label>
+                            <input
+                                type="date"
+                                value={startDate}
+                                onChange={(e) => setStartDate(e.target.value)}
+                                className="px-2 py-1 border border-gray-300 rounded-md"
+                                placeholder="Start Date"
+                            />
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <label className="text-sm font-medium">To</label>
+                            <input
+                                type="date"
+                                value={endDate}
+                                onChange={(e) => setEndDate(e.target.value)}
+                                className="px-2 py-1 border border-gray-300 rounded-md"
+                                placeholder="End Date"
+                            />
+                        </div>
+                        <button
+                            onClick={handleClearFilters}
+                            className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md disabled:opacity-50"
+                            disabled={loading || (startDate === '' && endDate === '' && rink === '' && province === '' && city === '')}
+                        >
+                            Clear Filters
+                        </button>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <label className="text-sm font-medium">To</label>
-                        <input
-                            type="date"
-                            value={endDate}
-                            onChange={(e) => setEndDate(e.target.value)}
-                            className="px-2 py-1 border border-gray-300 rounded-md"
-                            placeholder="End Date"
-                        />
+                    <div className="flex gap-4 items-center">
+                        <div className="flex items-center gap-2">
+                            <label className="text-sm font-medium">Rink</label>
+                            <input
+                                type="text"
+                                value={rink}
+                                onChange={(e) => setRink(e.target.value)}
+                                className="px-2 py-1 border border-gray-300 rounded-md"
+                                placeholder="Rink name"
+                            />
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <label className="text-sm font-medium">Province</label>
+                            <select
+                                value={province}
+                                onChange={e => setProvince(e.target.value)}
+                                className="px-2 py-1 border border-gray-300 rounded-md bg-white"
+                            >
+                                <option value="">All</option>
+                                {provinces.map(p => (
+                                    <option key={p.id} value={p.id}>{p.province_name}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <label className="text-sm font-medium">City</label>
+                            <input
+                                type="text"
+                                value={city}
+                                onChange={(e) => setCity(e.target.value)}
+                                className="px-2 py-1 border border-gray-300 rounded-md"
+                                placeholder="City"
+                            />
+                        </div>
                     </div>
-                    <button
-                        onClick={handleClearFilters}
-                        className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md disabled:opacity-50"
-                        disabled={loading || (startDate === '' && endDate === '')}
-                    >
-                        Clear Filters
-                    </button>
                 </div>
                 <div className="flex items-center gap-2">
                     <label htmlFor="pageSize" className="text-sm font-medium">Per Page:</label>
@@ -131,6 +204,13 @@ export default function RinkReport() {
                         <option value={50}>50</option>
                         <option value={100}>100</option>
                     </select>
+                    <button
+                        onClick={handleExport}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-md"
+                        disabled={loading}
+                    >
+                        Export
+                    </button>
                 </div>
             </div>
 
