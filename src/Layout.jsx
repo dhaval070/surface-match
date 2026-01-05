@@ -1,5 +1,5 @@
 
-import { Button } from "@headlessui/react";
+import { Menu, MenuButton, MenuItems, MenuItem } from "@headlessui/react";
 import { Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "./AuthProvider";
 import { useNavigate } from "react-router-dom";
@@ -60,13 +60,19 @@ export default function Layout() {
                             </button>
                         </div>
                         <div className="flex items-center space-x-4">
-                            <span className="text-sm text-gray-600">Hi, <span className="font-semibold text-gray-800">{auth.user}</span></span>
-                            <Button onClick={logout} className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors border border-gray-300">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                                </svg>
-                                <span>Logout</span>
-                            </Button>
+                            <Menu as="div" className="relative inline-block text-left">
+                                <MenuButton className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors border border-gray-300">
+                                    <span>Hi, <span className="font-semibold text-gray-800">{auth.user}</span></span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clipRule="evenodd" />
+                                    </svg>
+                                </MenuButton>
+                                <MenuItems className="absolute right-0 mt-2 w-32 bg-white border border-gray-200 rounded-md shadow-lg focus:outline-none z-10">
+                                    <MenuItem as="button" onClick={logout} className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        Logout
+                                    </MenuItem>
+                                </MenuItems>
+                            </Menu>
                         </div>
                     </div>
                 </div>
