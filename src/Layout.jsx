@@ -68,6 +68,9 @@ export default function Layout() {
                                     </svg>
                                 </MenuButton>
                                 <MenuItems className="absolute right-0 mt-2 w-32 bg-white border border-gray-200 rounded-md shadow-lg focus:outline-none z-10">
+                                    <MenuItem as="button" onClick={() => navigate('/change-password')} className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        Change Password
+                                    </MenuItem>
                                     <MenuItem as="button" onClick={logout} className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                         Logout
                                     </MenuItem>

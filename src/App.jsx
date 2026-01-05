@@ -11,6 +11,7 @@ import Events from './Events.jsx'
 import SurfaceReport from './SurfaceReport.jsx'
 import RinkReport from './RinkReport.jsx'
 import Users from './Users.jsx'
+import ChangePassword from './ChangePassword.jsx'
 
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 
@@ -30,6 +31,7 @@ export default function App() {
                         <Route path="/surface-report" element={<SurfaceReport />} />
                         <Route path="/rink-report" element={<RinkReport />} />
                         <Route path="/users" element={<Users />} />
+                        <Route path="/change-password" element={<ChangePassword />} />
                     </Route>
                 </Route>
             </Routes>
