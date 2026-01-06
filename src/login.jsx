@@ -14,7 +14,8 @@ export default function Login() {
 
     const handleSubmit = (e) => {
         e.preventDefault()
-        if (input.username == "" || input.password == "") {
+        if (input.username.trim() === "" || input.password.trim() === "") {
+            alert("Username and password are required")
             return
         }
         auth.loginAction(input)
@@ -26,6 +27,11 @@ export default function Login() {
         }
 
     }, [auth.user, navigate])
+
+    useEffect(() => {
+        const el = document.querySelector('input[name="username"]')
+        if (el) el.focus()
+    }, [])
 
     const handleInput = (e) => {
         const { name, value } = e.target
@@ -43,24 +49,26 @@ export default function Login() {
     return (
         <div className="w-full border border-black border-solid p-5">
             <h1>Login</h1>
-            <table className="border-none">
-            <tbody>
-            <tr>
-                <td>Username</td>
-                <td><Input name="username" type="text" value={input.username} onChange={handleInput} /></td>
-            </tr>
-            <tr>
-                <td>Password</td>
-                <td><Input name="password" type="password" value={input.password} onChange={handleInput} /></td>
-            </tr>
-            <tr>
-                <td></td>
-                <td>
-                    <Button  className="rounded bg-sky-600 py-2 px-2  text-white data-[hover]:bg-sky-500 data-[active]:bg-sky-700" onClick={handleSubmit}>Login</Button>
-                </td>
-            </tr>
-            </tbody>
-            </table>
+            <form onSubmit={handleSubmit}>
+                <table className="border-none">
+                    <tbody>
+                        <tr>
+                            <td>Username</td>
+                            <td><Input name="username" type="text" value={input.username} onChange={handleInput} /></td>
+                        </tr>
+                        <tr>
+                            <td>Password</td>
+                            <td><Input name="password" type="password" value={input.password} onChange={handleInput} /></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td>
+                                <Button type="submit" className="rounded bg-sky-600 py-2 px-2  text-white data-[hover]:bg-sky-500 data-[active]:bg-sky-700">Login</Button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </form>
         </div>
     )
 }
