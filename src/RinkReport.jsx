@@ -26,11 +26,14 @@ export default function RinkReport() {
     const [province, setProvince] = useState("");
     const [city, setCity] = useState("");
     const [provinces, setProvinces] = useState([]);
+    const [site, setSite] = useState("");
+    const [sites, setSites] = useState([]);
 
     const debouncedStartDate = useDebounce(startDate, 500);
     const debouncedEndDate = useDebounce(endDate, 500);
     const debouncedRink = useDebounce(rink, 500);
     const debouncedCity = useDebounce(city, 500);
+    const debouncedSite = useDebounce(site, 500);
 
     const auth = useAuth();
     const api = auth.api;
@@ -48,12 +51,24 @@ export default function RinkReport() {
     }, [api]);
 
     useEffect(() => {
+        const fetchSites = async () => {
+            try {
+                const resp = await api.get(`${apiurl}/sites`);
+                setSites(resp.data || []);
+            } catch (err) {
+                console.error("Error fetching sites:", err);
+            }
+        };
+        fetchSites();
+    }, [api]);
+
+    useEffect(() => {
         setPage(1);
-    }, [debouncedStartDate, debouncedEndDate, debouncedRink, debouncedCity, province, perPage]);
+    }, [debouncedStartDate, debouncedEndDate, debouncedRink, debouncedCity, province, debouncedSite, perPage]);
 
     useEffect(() => {
         fetchReport();
-    }, [page, perPage, debouncedStartDate, debouncedEndDate, debouncedRink, debouncedCity, province, api]);
+    }, [page, perPage, debouncedStartDate, debouncedEndDate, debouncedRink, debouncedCity, province, debouncedSite, api]);
 
     const fetchReport = async () => {
         setLoading(true);
@@ -65,6 +80,7 @@ export default function RinkReport() {
         if (debouncedEndDate) params.append('end_date', debouncedEndDate);
         if (debouncedRink) params.append('rink', debouncedRink);
         if (province) params.append('province', province);
+        if (debouncedSite) params.append('site', debouncedSite);
         if (debouncedCity) params.append('city', debouncedCity);
 
         try {
@@ -94,6 +110,7 @@ export default function RinkReport() {
         setRink('');
         setProvince('');
         setCity('');
+        setSite('');
         setPage(1);
     };
 
@@ -103,6 +120,7 @@ export default function RinkReport() {
         if (debouncedEndDate) params.append('end_date', debouncedEndDate);
         if (debouncedRink) params.append('rink', debouncedRink);
         if (province) params.append('province', province);
+        if (debouncedSite) params.append('site', debouncedSite);
         if (debouncedCity) params.append('city', debouncedCity);
         params.append('export', '1');
         const url = `${apiurl}/rink-report?${params.toString()}`;
@@ -149,7 +167,7 @@ export default function RinkReport() {
                         <button
                             onClick={handleClearFilters}
                             className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md disabled:opacity-50"
-                            disabled={loading || (startDate === '' && endDate === '' && rink === '' && province === '' && city === '')}
+                            disabled={loading || (startDate === '' && endDate === '' && rink === '' && province === '' && city === '' && site === '')}
                         >
                             Clear Filters
                         </button>
@@ -187,6 +205,21 @@ export default function RinkReport() {
                                 className="px-2 py-1 border border-gray-300 rounded-md"
                                 placeholder="City"
                             />
+                        </div>
+                    </div>
+                    <div className="flex gap-4 items-center mt-2">
+                        <div className="flex items-center gap-2">
+                            <label className="text-sm font-medium">Site</label>
+                            <select
+                                value={site}
+                                onChange={e => setSite(e.target.value)}
+                                className="px-2 py-1 border border-gray-300 rounded-md bg-white"
+                            >
+                                <option value="">All</option>
+                                {sites.map(s => (
+                                    <option key={s.site_name} value={s.site_name}>{s.display_name}</option>
+                                ))}
+                            </select>
                         </div>
                     </div>
                 </div>
