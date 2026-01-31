@@ -201,53 +201,53 @@ export default function Home() {
 
             <Dialog open={showLocationsModal} onClose={() => setShowLocationsModal(false)} className="relative z-50">
                 <div className="fixed inset-0 flex w-screen justify-center bg-white p-4">
-                  <div className="flex items-center justify-center ">
-                      <DialogPanel className=" w-max  h-full overflow-auto  space-y-2 border bg-white p-2">
-                        <DialogTitle className="font-bold">Select location for <span className="text-orange-500">{locationModalSiteLoc && locationModalSiteLoc.location}</span></DialogTitle>
-                        <Description />
+                    <div className="flex items-center justify-center ">
+                        <DialogPanel className=" w-max  h-full overflow-auto  space-y-2 border bg-white p-2">
+                            <DialogTitle className="font-bold">Select location for <span className="text-orange-500">{locationModalSiteLoc && locationModalSiteLoc.location}</span></DialogTitle>
+                            <Description />
 
-                        <div className="flex items-center justify-between mb-2">
-                          <input type="text" value={nameFilter} onChange={e => setNameFilter(e.target.value)} placeholder="Filter by name..." className="px-2 py-1 border rounded-md w-64" />
-                          <div className="text-sm text-gray-600">Showing {pagination && pagination.total ? pagination.total : locations.length} results</div>
-                        </div>
+                            <div className="flex items-center justify-between mb-2">
+                                <input type="text" value={nameFilter} onChange={e => setNameFilter(e.target.value)} placeholder="Filter by name..." className="px-2 py-1 border rounded-md w-64" />
+                                <div className="text-sm text-gray-600">Showing {pagination && pagination.total ? pagination.total : locations.length} results</div>
+                            </div>
 
-                        <table className="table-auto w-full border">
-                            <thead className="sticky top-0">
-                                <tr className="bg-gray-100">
-                                    <th>ID</th><th>Name</th><th>City</th><th>Postal</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {locations && locations.map(l => (
-                                    <tr key={l.id}>
-                                        <td className="border"><a href="#" className="font-bold text-blue-600 hover:text-blue-400" onClick={() => locationSelected(l.id, locationModalSiteLoc)}>{l.id}</a></td>
-                                        <td className="border">{l.name}</td>
-                                        <td className="border">{l.city}</td>
-                                        <td className="border">{l.postal_code}</td>
+                            <table className="table-auto w-full border">
+                                <thead className="sticky top-0">
+                                    <tr className="bg-gray-100">
+                                        <th>ID</th><th>Name</th><th>City</th><th>Postal</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    {locations && locations.map(l => (
+                                        <tr key={l.id} className="even:bg-gray-50 odd:bg-gray-200">
+                                            <td className="border"><a href="#" className="font-bold text-blue-600 hover:text-blue-400" onClick={() => locationSelected(l.id, locationModalSiteLoc)}>{l.id}</a></td>
+                                            <td className="border">{l.name}</td>
+                                            <td className="border">{l.city}</td>
+                                            <td className="border">{l.postal_code}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
 
-                        {pagination && totalPages > 1 && (
-                          <div className="flex justify-between items-center my-2">
-                            <div className="flex gap-2">
-                              <button onClick={handleFirstPage} disabled={currentPage === 1 || isBusy} className="px-3 py-1 bg-gray-300 rounded disabled:opacity-50">First</button>
-                              <button onClick={handlePrevPage} disabled={currentPage === 1 || isBusy} className="px-3 py-1 bg-gray-300 rounded disabled:opacity-50">Previous</button>
-                            </div>
-                            <div>Page {currentPage} of {totalPages}</div>
-                            <div className="flex gap-2">
-                              <button onClick={handleNextPage} disabled={currentPage >= totalPages || isBusy} className="px-3 py-1 bg-gray-300 rounded disabled:opacity-50">Next</button>
-                              <button onClick={handleLastPage} disabled={currentPage >= totalPages || isBusy} className="px-3 py-1 bg-gray-300 rounded disabled:opacity-50">Last</button>
-                            </div>
-                          </div>
-                        )}
+                            {pagination && totalPages > 1 && (
+                                <div className="flex justify-between items-center my-2">
+                                    <div className="flex gap-2">
+                                        <button onClick={handleFirstPage} disabled={currentPage === 1 || isBusy} className="px-3 py-1 bg-gray-300 rounded disabled:opacity-50">First</button>
+                                        <button onClick={handlePrevPage} disabled={currentPage === 1 || isBusy} className="px-3 py-1 bg-gray-300 rounded disabled:opacity-50">Previous</button>
+                                    </div>
+                                    <div>Page {currentPage} of {totalPages}</div>
+                                    <div className="flex gap-2">
+                                        <button onClick={handleNextPage} disabled={currentPage >= totalPages || isBusy} className="px-3 py-1 bg-gray-300 rounded disabled:opacity-50">Next</button>
+                                        <button onClick={handleLastPage} disabled={currentPage >= totalPages || isBusy} className="px-3 py-1 bg-gray-300 rounded disabled:opacity-50">Last</button>
+                                    </div>
+                                </div>
+                            )}
 
-                        <div className="flex gap-4">
-                          <Button className="rounded bg-sky-600 py-2 px-4 text-sm text-white data-[hover]:bg-sky-500 data-[active]:bg-sky-700" onClick={() => setShowLocationsModal(false)}>Cancel</Button>
-                        </div>
-                      </DialogPanel>
-                  </div>
+                            <div className="flex gap-4">
+                                <Button className="rounded bg-sky-600 py-2 px-4 text-sm text-white data-[hover]:bg-sky-500 data-[active]:bg-sky-700" onClick={() => setShowLocationsModal(false)}>Cancel</Button>
+                            </div>
+                        </DialogPanel>
+                    </div>
                 </div>
             </Dialog>
 
