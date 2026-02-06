@@ -43,6 +43,9 @@ export default function Layout() {
                             <button className={navLinkClass("/mappings")} onClick={() => navigate("/mappings")}>
                                 Mappings
                             </button>
+                            <button className={navLinkClass("/MHR Locations")} onClick={() => navigate("/mhr-locations")}>
+                                MHR Locations
+                            </button>
                             <button className={navLinkClass("/ramp-mappings")} onClick={() => navigate("/ramp-mappings")}>
                                 RAMP Mappings
                             </button>

@@ -12,6 +12,7 @@ import SurfaceReport from './SurfaceReport.jsx'
 import RinkReport from './RinkReport.jsx'
 import Users from './Users.jsx'
 import ChangePassword from './ChangePassword.jsx'
+import MHRLocations from './mhr-locations.jsx'
 
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 
@@ -24,6 +25,7 @@ export default function App() {
                     <Route element={<PrivateRoute />}>
                         <Route path="/" element={<Home />} />
                         <Route path="/mappings" element={<Mapping />} />
+                        <Route path="/mhr-locations" element={<MHRLocations />} />
                         <Route path="/ramp-mappings" element={<RAMPMapping />} />
                         <Route path="/sites-config" element={<SitesConfig />} />
                         <Route path="/locations" element={<Locations />} />
