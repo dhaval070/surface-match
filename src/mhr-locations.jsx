@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react'
 import './App.css'
 import { Field, Button } from '@headlessui/react'
 import { useAuth } from './AuthProvider.jsx'
-import SurfaceDialog from './surface-dialog.jsx'
 import LocationDialog from './LocationDialog.jsx'
 
 const apiurl = import.meta.env.VITE_API_URL
@@ -95,23 +94,9 @@ export default function MHRLocations() {
         }
     }, [isOpen, isLocDiagOpen])
 
-    let assignSurface = function(rec) {
-        setCurrSiteLoc(rec)
-        setIsOpen(true)
-    }
-
     let assignLocation = function(rec) {
         setCurrSiteLoc(rec)
         setIsLocDiagOpen(true)
-    }
-
-    let surfaceSelected = function(id, siteloc) {
-        setIsOpen(false)
-        setBusy(true)
-        siteloc.livebarn_surface_id = id
-        api.post(apiurl + "/mhr-set-surface", siteloc).then(() => fetchData(api, page, pageSize)).catch((e) => console.error(e)).finally(() => {
-            setBusy(false)
-        })
     }
 
     let locationSelected = function(id, siteloc) {
@@ -178,25 +163,14 @@ export default function MHRLocations() {
                     </div>
                 </td>
                 <td className="text-left">{r.LiveBarnLocation.name}</td>
-                <td className="text-left">
-                    <div className="flex justify-between items-center">
-                        <span>{r.livebarn_surface_id}</span>
-                    </div>
-                </td>
-                <td className="text-left">{r.LinkedSurface.name}</td>
                 <td className="text-left whitespace-nowrap w-48">
                     <div className="relative inline-block overflow-visible" ref={selectorFor === r.location ? dropdownRef : null}>
                         <Button className="rounded bg-sky-600 py-2 px-2 text-xs text-white data-[hover]:bg-sky-500 data-[active]:bg-sky-700" onClick={() => setSelectorFor(selectorFor === r.mhr_id ? null : r.mhr_id)}>Change</Button>
                         {selectorFor === r.mhr_id && <div className="absolute right-0 mt-1 w-36 bg-white border rounded shadow-md flex flex-col" style={{ zIndex: 9999 }}>
 
-                            <button className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100" onClick={() => { assignSurface(r); }}>Surface</button>
                             <button className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100" onClick={() => { assignLocation(r); }}>Location</button>
                         </div>}
                     </div>
-                    &nbsp;&nbsp;
-                    {r.livebarn_surface_id != 0 &&
-                        <Button className="rounded bg-emerald-600 py-2 px-2 text-xs text-white data-[hover]:bg-emerald-500 data-[active]:bg-emerald-700" onClick={() => unsetMapping('surface', r)}>Reset Surface</Button>
-                    }
                     &nbsp;&nbsp;
                     {r.livebarn_location_id != 0 &&
                         <Button className="rounded bg-amber-600 py-2 px-2 text-xs text-white data-[hover]:bg-amber-500 data-[active]:bg-amber-700" onClick={() => unsetMapping('location', r)}>Reset Location</Button>
@@ -215,7 +189,6 @@ export default function MHRLocations() {
                     </div>
                 </div>
             }
-            <SurfaceDialog province="Ontario" api={api} siteLoc={currSiteLoc} isOpen={isOpen} setIsOpen={setIsOpen} surfaceSelected={surfaceSelected} />
             <LocationDialog api={api} siteLoc={currSiteLoc} isOpen={isLocDiagOpen} setIsOpen={setIsLocDiagOpen} locSelected={locationSelected} />
 
             <div className="flex justify-between items-center my-4 p-4 bg-gray-50 rounded-lg">
@@ -273,8 +246,6 @@ export default function MHRLocations() {
                             <th>State/Province</th>
                             <th>Livebarn Location ID</th>
                             <th>Livebarn Location Name</th>
-                            <th>Surface ID</th>
-                            <th>Surface Name</th>
                             <th className="w-48">Actions</th>
                         </tr>
 
