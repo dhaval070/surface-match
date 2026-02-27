@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import './App.css'
 import { useAuth } from './AuthProvider.jsx'
 import { Field, Label, Input, Button, Dialog, DialogPanel, DialogTitle, Description, Textarea, Select } from '@headlessui/react'
@@ -28,11 +28,6 @@ export default function SitesConfig() {
     const api = auth.api
 
     useEffect(function() {
-        loadSitesConfigs()
-        loadParserTypes()
-    }, [api])
-
-    useEffect(function() {
         if (parserTypeFilter === '') {
             setFilteredConfigs(sitesConfigs)
         } else {
@@ -40,18 +35,23 @@ export default function SitesConfig() {
         }
     }, [parserTypeFilter, sitesConfigs])
 
-    const loadSitesConfigs = () => {
+    const loadSitesConfigs = useCallback(() => {
         setBusy(true)
         api.get(apiurl + "/sites-config").then((resp) => {
             setSitesConfigs(resp.data || [])
         }).catch(e => console.error(e)).finally(() => setBusy(false))
-    }
+    }, [api, setBusy, setSitesConfigs])
 
-    const loadParserTypes = () => {
+    const loadParserTypes = useCallback(() => {
         api.get(apiurl + "/parser-types").then((resp) => {
             setParserTypes(resp.data || [])
         }).catch(e => console.error(e))
-    }
+    }, [api, setParserTypes])
+
+    useEffect(function() {
+        loadSitesConfigs()
+        loadParserTypes()
+    }, [api, loadSitesConfigs, loadParserTypes])
 
     const openCreateDialog = () => {
         setEditingConfig(null)
@@ -313,8 +313,8 @@ export default function SitesConfig() {
             <div className="mb-4 flex justify-between items-center">
                 <Field className="flex items-center space-x-2">
                     <Label className="text-sm font-medium">Parser Type</Label>
-                    <Select 
-                        value={parserTypeFilter} 
+                    <Select
+                        value={parserTypeFilter}
                         onChange={(e) => setParserTypeFilter(e.target.value)}
                         className="rounded border border-gray-300 px-3 py-2 text-sm"
                     >

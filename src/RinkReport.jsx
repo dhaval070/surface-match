@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "./AuthProvider";
 
 const apiurl = import.meta.env.VITE_API_URL;
@@ -66,11 +66,7 @@ export default function RinkReport() {
         setPage(1);
     }, [debouncedStartDate, debouncedEndDate, debouncedRink, debouncedCity, province, debouncedSite, perPage]);
 
-    useEffect(() => {
-        fetchReport();
-    }, [page, perPage, debouncedStartDate, debouncedEndDate, debouncedRink, debouncedCity, province, debouncedSite, api]);
-
-    const fetchReport = async () => {
+    const fetchReport = useCallback(async () => {
         setLoading(true);
         const params = new URLSearchParams({
             page: page,
@@ -102,7 +98,11 @@ export default function RinkReport() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [page, perPage, debouncedStartDate, debouncedEndDate, debouncedRink, debouncedCity, province, debouncedSite, api, setLoading, setData, setTotal, setPerPage]);
+
+    useEffect(() => {
+        fetchReport();
+    }, [page, perPage, debouncedStartDate, debouncedEndDate, debouncedRink, debouncedCity, province, debouncedSite, api, fetchReport]);
 
     const handleClearFilters = () => {
         setStartDate('');

@@ -1,6 +1,6 @@
 import { Button, Dialog, DialogPanel, DialogTitle, Description } from '@headlessui/react';
 import PropTypes from 'prop-types';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 const apiurl = import.meta.env.VITE_API_URL;
 
@@ -17,9 +17,9 @@ export default function EventsDialog({ isOpen, setIsOpen, locationId, locationNa
             setEvents([]);
             setCount(0);
         }
-    }, [isOpen, locationId, startDate, endDate, api]);
+    }, [isOpen, locationId, startDate, endDate, api, fetchEvents]);
 
-    const fetchEvents = () => {
+    const fetchEvents = useCallback(() => {
         if (!api) return;
         
         setLoading(true);
@@ -49,7 +49,7 @@ export default function EventsDialog({ isOpen, setIsOpen, locationId, locationNa
             .finally(() => {
                 setLoading(false);
             });
-    };
+    }, [api, locationId, startDate, endDate, setLoading, setEvents, setCount]);
 
     let eventsRows = [];
     if (events && events.length > 0) {

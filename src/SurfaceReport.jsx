@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "./AuthProvider";
 import EventsDialog from "./EventsDialog";
 
@@ -36,11 +36,7 @@ export default function SurfaceReport() {
         setPage(1);
     }, [debouncedLocationNameFilter, perPage]);
 
-    useEffect(() => {
-        fetchReport();
-    }, [page, perPage, debouncedLocationNameFilter, api]);
-
-    const fetchReport = async () => {
+    const fetchReport = useCallback(async () => {
         setLoading(true);
         const params = new URLSearchParams({
             page: page,
@@ -49,7 +45,7 @@ export default function SurfaceReport() {
         if (debouncedLocationNameFilter) {
             params.append('location_name', debouncedLocationNameFilter);
         }
-        
+
         api.get(`${apiurl}/report?${params.toString()}`)
             .then((resp) => {
                 setData(resp.data.data || []);
@@ -62,7 +58,11 @@ export default function SurfaceReport() {
             .finally(() => {
                 setLoading(false);
             });
-    };
+    }, [page, perPage, debouncedLocationNameFilter, api, setLoading, setData, setTotal, setPerPage]);
+
+    useEffect(() => {
+        fetchReport();
+    }, [page, perPage, debouncedLocationNameFilter, api, fetchReport]);
 
     const totalPages = Math.ceil(total / perPage);
 
@@ -116,13 +116,13 @@ export default function SurfaceReport() {
     return (
         <div className="App w-full">
 
-        {loading &&
-        <div className="w-full h-full fixed top-0 left-0 bg-white opacity-75 z-50">
-            <div className="flex justify-center items-center mt-[50vh]">
-                <div className="fas fa-circle-notch fa-spin fa-5x text-violet-600"></div>
-            </div>
-        </div>
-        }
+            {loading &&
+                <div className="w-full h-full fixed top-0 left-0 bg-white opacity-75 z-50">
+                    <div className="flex justify-center items-center mt-[50vh]">
+                        <div className="fas fa-circle-notch fa-spin fa-5x text-violet-600"></div>
+                    </div>
+                </div>
+            }
 
             <div className="flex justify-between items-center mb-4">
                 <h1 className="text-xl font-bold text-left">Surface Report</h1>
@@ -134,7 +134,7 @@ export default function SurfaceReport() {
                     Export
                 </button>
             </div>
-            
+
             <div className="flex justify-between items-center my-4 p-4 bg-gray-50 rounded-lg">
                 <div className="flex gap-4 items-center">
                     <input
@@ -171,7 +171,7 @@ export default function SurfaceReport() {
                     </select>
                 </div>
             </div>
-            
+
             <div className="my-5">
                 <table className="table-auto bg-gray-100 w-full">
                     <thead className="sticky top-0">
