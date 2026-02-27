@@ -152,10 +152,12 @@ export default function SitesConfig() {
                 <td className="text-left px-2">{config.parser_type}</td>
                 <td className="text-left px-2">{config.enabled ? 'Yes' : 'No'}</td>
                 <td className="text-left px-2">{config.last_scraped_at || '-'}</td>
-                <td className="text-left px-2 whitespace-nowrap">
-                    <Button className="rounded bg-sky-600 py-2 px-2 text-xs text-white data-[hover]:bg-sky-500 data-[active]:bg-sky-700" onClick={() => openEditDialog(config)}>Edit</Button>
-                    &nbsp;
-                    <Button className="rounded bg-red-600 py-2 px-2 text-xs text-white data-[hover]:bg-red-500 data-[active]:bg-red-700" onClick={() => handleDelete(config.id)}>Delete</Button>
+                <td className="text-left px-2">{config.games_scraped || '-'}</td>
+                <td className="text-left px-2">
+                    <div className="flex flex-col gap-1">
+                        <Button className="rounded bg-sky-600 py-2 px-2 text-xs text-white data-[hover]:bg-sky-500 data-[active]:bg-sky-700" onClick={() => openEditDialog(config)}>Edit</Button>
+                        <Button className="rounded bg-red-600 py-2 px-2 text-xs text-white data-[hover]:bg-red-500 data-[active]:bg-red-700" onClick={() => handleDelete(config.id)}>Delete</Button>
+                    </div>
                 </td>
             </tr>
         ))
@@ -321,6 +323,7 @@ export default function SitesConfig() {
                             <th className="px-2">Parser Type</th>
                             <th className="px-2">Enabled</th>
                             <th className="px-2">Last Scraped</th>
+                            <th className="px-2">Games scraped</th>
                             <th className="px-2">Actions</th>
                         </tr>
                     </thead>
