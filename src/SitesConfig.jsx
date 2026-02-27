@@ -137,6 +137,20 @@ export default function SitesConfig() {
         }).finally(() => setBusy(false))
     }
 
+    const handleToggle = (id, enabled) => {
+        const action = enabled ? 'disable' : 'enable'
+        if (!confirm(`Are you sure you want to ${action} this site configuration?`)) {
+            return
+        }
+        setBusy(true)
+        api.post(apiurl + "/sites-config/" + id + "/toggle").then(() => {
+            loadSitesConfigs()
+        }).catch((e) => {
+            console.error(e)
+            alert(e.response?.data?.error || 'An error occurred')
+        }).finally(() => setBusy(false))
+    }
+
     const handleChange = (field, value) => {
         setFormData({ ...formData, [field]: value })
     }
@@ -150,11 +164,14 @@ export default function SitesConfig() {
                 <td className="text-left px-2">{config.display_name || '-'}</td>
                 <td className="text-left px-2 max-w-xs truncate" title={config.base_url}>{config.base_url}</td>
                 <td className="text-left px-2">{config.parser_type}</td>
-                <td className="text-left px-2">{config.enabled ? 'Yes' : 'No'}</td>
+                <td className="text-left px-2">{config.enabled ? 'Yes' : <span className="text-red-600">No</span>}</td>
                 <td className="text-left px-2">{config.last_scraped_at || '-'}</td>
                 <td className="text-left px-2">{config.games_scraped || '-'}</td>
                 <td className="text-left px-2">
                     <div className="flex flex-col gap-1">
+                        <Button className={`rounded py-2 px-2 text-xs text-white data-[hover]:bg-opacity-80 data-[active]:bg-opacity-100 ${config.enabled ? 'bg-amber-600 data-[hover]:bg-amber-500 data-[active]:bg-amber-700' : 'bg-emerald-600 data-[hover]:bg-emerald-500 data-[active]:bg-emerald-700'}`} onClick={() => handleToggle(config.id, config.enabled)}>
+                            {config.enabled ? 'Disable' : 'Enable'}
+                        </Button>
                         <Button className="rounded bg-sky-600 py-2 px-2 text-xs text-white data-[hover]:bg-sky-500 data-[active]:bg-sky-700" onClick={() => openEditDialog(config)}>Edit</Button>
                         <Button className="rounded bg-red-600 py-2 px-2 text-xs text-white data-[hover]:bg-red-500 data-[active]:bg-red-700" onClick={() => handleDelete(config.id)}>Delete</Button>
                     </div>

@@ -34,7 +34,6 @@ export default function Events() {
     const [showConfirmDialog, setShowConfirmDialog] = useState(false)
     const [selectedSurfaceId, setSelectedSurfaceId] = useState(null)
     const [apiMessage, setApiMessage] = useState(null)
-    const [isUnsetAction, setIsUnsetAction] = useState(false)
 
     const debouncedSite = useDebounce(site, 500);
     const debouncedStartDate = useDebounce(startDate, 500);
@@ -80,11 +79,11 @@ export default function Events() {
 
     const handleSetSurface = (event) => {
         setSelectedEvent(event);
-        setIsUnsetAction(false);
         setShowSurfaceDialog(true);
     };
 
-    const surfaceSelected = (surfaceId, eventData) => {
+    // eslint-disable-next-line no-unused-vars
+    const surfaceSelected = (surfaceId, _eventData) => {
         setShowSurfaceDialog(false);
         setSelectedSurfaceId(surfaceId);
         setShowConfirmDialog(true);
@@ -134,7 +133,6 @@ export default function Events() {
     const handleUnsetSurface = (event) => {
         setSelectedEvent(event);
         setSelectedSurfaceId(0);
-        setIsUnsetAction(true);
         setShowConfirmDialog(true);
     };
 
