@@ -27,9 +27,17 @@ export default function Home() {
     const [siteLocCurrentPage, setSiteLocCurrentPage] = useState(1)
     const [siteLocPageSize, setSiteLocPageSize] = useState(25)
     const [siteLocPagination, setSiteLocPagination] = useState(null)
+    const [siteScrapingStatus, setSiteScrapingStatus] = useState(null)
+    const [scrapeStatusLoading, setScrapeStatusLoading] = useState(false)
+    const [scrapeTriggerLoading, setScrapeTriggerLoading] = useState(false)
+    const [confirmScrapeOpen, setConfirmScrapeOpen] = useState(false)
+    const [errorModalOpen, setErrorModalOpen] = useState(false)
+    const [errorDetails, setErrorDetails] = useState('')
     const auth = useAuth()
     const api = auth.api
     const dropdownRef = useRef(null)
+    const scrapeStatusIntervalRef = useRef(null)
+    const prevScrapeStatusRef = useRef(null)
 
     const fetchSiteLocations = useCallback(() => {
         setBusy(true)
@@ -46,6 +54,32 @@ export default function Home() {
             }
         }).catch(e => console.error(e)).finally(() => setBusy(false))
     }, [site, api, siteLocCurrentPage, siteLocPageSize, debouncedLocationFilter])
+
+    const fetchScrapeStatus = useCallback((siteName) => {
+        if (!siteName) {
+            setSiteScrapingStatus(null)
+            return
+        }
+        setScrapeStatusLoading(true)
+        api.get(apiurl + `/scrape/status/${siteName}`)
+            .then((resp) => {
+                const newStatus = resp.data
+                const prevStatus = prevScrapeStatusRef.current
+                const wasRunning = prevStatus && prevStatus.status === 'running'
+                const isNotRunning = newStatus && newStatus.status !== 'running'
+                setSiteScrapingStatus(newStatus)
+                prevScrapeStatusRef.current = newStatus
+                if (wasRunning && isNotRunning) {
+                    fetchSiteLocations()
+                }
+            })
+            .catch((e) => {
+                console.error('Failed to fetch scrape status:', e)
+                setSiteScrapingStatus(null)
+                prevScrapeStatusRef.current = null
+            })
+            .finally(() => setScrapeStatusLoading(false))
+    }, [api, fetchSiteLocations])
 
     useEffect(() => {
         const handler = setTimeout(() => setDebouncedNameFilter(nameFilter), 500)
@@ -67,6 +101,34 @@ export default function Home() {
         setSiteLocCurrentPage(1)
         setLocationFilter('')
     }, [site])
+
+    useEffect(() => {
+        // clear any existing interval
+        if (scrapeStatusIntervalRef.current) {
+            clearInterval(scrapeStatusIntervalRef.current)
+            scrapeStatusIntervalRef.current = null
+        }
+        // reset previous status ref when site changes
+        prevScrapeStatusRef.current = null
+        // clear status when no site selected
+        if (!site) {
+            setSiteScrapingStatus(null)
+            return
+        }
+        // fetch immediately
+        fetchScrapeStatus(site)
+        // set up polling every 5 seconds
+        scrapeStatusIntervalRef.current = setInterval(() => {
+            fetchScrapeStatus(site)
+        }, 5000)
+        // cleanup
+        return () => {
+            if (scrapeStatusIntervalRef.current) {
+                clearInterval(scrapeStatusIntervalRef.current)
+                scrapeStatusIntervalRef.current = null
+            }
+        }
+    }, [site, fetchScrapeStatus])
 
     useEffect(() => {
         // reset to first page whenever location filter changes
@@ -149,6 +211,48 @@ export default function Home() {
         })
     }
 
+    const openErrorModal = (error) => {
+        setErrorDetails(error || 'No error details available')
+        setErrorModalOpen(true)
+    }
+
+    const openConfirmScrape = () => {
+        if (!site) return
+        setConfirmScrapeOpen(true)
+    }
+
+    const performScrape = useCallback(() => {
+        setConfirmScrapeOpen(false)
+        if (!site) return
+        setScrapeTriggerLoading(true)
+        api.post(apiurl + "/scrape", { site: site })
+            .then(() => {
+                // Optimistically update status to running
+                setSiteScrapingStatus(prev => ({
+                    ...(prev || {}),
+                    site: site,
+                    status: 'running',
+                    started_at: new Date().toISOString(),
+                    error: null
+                }))
+            })
+            .catch((e) => {
+                console.error('Failed to trigger scrape:', e)
+                if (e.response?.status === 409) {
+                    alert('Site is already being scraped')
+                    setSiteScrapingStatus(prev => ({
+                        ...(prev || {}),
+                        site: site,
+                        status: 'running',
+                        error: null
+                    }))
+                } else {
+                    alert('Failed to start scraping: ' + (e.response?.data?.error || e.message))
+                }
+            })
+            .finally(() => setScrapeTriggerLoading(false))
+    }, [site, api])
+
     const handlePrevPage = () => setCurrentPage(p => Math.max(1, p - 1))
     const handleNextPage = () => setCurrentPage(p => p + 1)
     const handleFirstPage = () => setCurrentPage(1)
@@ -183,6 +287,7 @@ export default function Home() {
         })
     }
 
+    const isScrapingRunning = siteScrapingStatus?.status === 'running'
     let rows = []
 
     if (siteLoc.length > 0) {
@@ -205,18 +310,18 @@ export default function Home() {
                 <td className="text-left">{r.LinkedSurface.name}</td>
                 <td className="text-left w-48">
                     <div className="relative inline-block overflow-visible" ref={selectorFor === `${r.site}-${r.location}` ? dropdownRef : null}>
-                        <Button className="rounded bg-sky-600 py-2 px-2 text-xs text-white data-[hover]:bg-sky-500 data-[active]:bg-sky-700" onClick={() => setSelectorFor(selectorFor === `${r.site}-${r.location}` ? null : `${r.site}-${r.location}`)}>Change</Button>
+                        <Button className="rounded bg-sky-600 py-2 px-2 text-xs text-white data-[hover]:bg-sky-500 data-[active]:bg-sky-700 disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => setSelectorFor(selectorFor === `${r.site}-${r.location}` ? null : `${r.site}-${r.location}`)} disabled={isScrapingRunning}>Change</Button>
                         {selectorFor === `${r.site}-${r.location}` && <div className="absolute right-0 mt-1 w-36 bg-white border rounded shadow-md flex flex-col" style={{ zIndex: 9999 }}>
-                            <button className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100" onClick={() => { setSelectorFor(null); assignSurface(r); }}>Surface</button>
-                            <button className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100" onClick={() => { setSelectorFor(null); setLocationModalSiteLoc(r); setShowLocationsModal(true); }}>Location</button>
+                             <button className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => { setSelectorFor(null); assignSurface(r); }} disabled={isScrapingRunning}>Surface</button>
+                             <button className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => { setSelectorFor(null); setLocationModalSiteLoc(r); setShowLocationsModal(true); }} disabled={isScrapingRunning}>Location</button>
                         </div>}
                     </div>
                     <div className="mt-2 flex gap-2">
                         {r.surface_id != 0 &&
-                            <Button className="rounded bg-emerald-600 py-2 px-2 text-xs text-white data-[hover]:bg-emerald-500 data-[active]:bg-emerald-700" onClick={() => unsetMapping('surface', r)}>Reset Surface</Button>
+                             <Button className="rounded bg-emerald-600 py-2 px-2 text-xs text-white data-[hover]:bg-emerald-500 data-[active]:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => unsetMapping('surface', r)} disabled={isScrapingRunning}>Reset Surface</Button>
                         }
                         {r.location_id != 0 &&
-                            <Button className="rounded bg-amber-600 py-2 px-2 text-xs text-white data-[hover]:bg-amber-500 data-[active]:bg-amber-700" onClick={() => unsetMapping('location', r)}>Reset Location</Button>
+                             <Button className="rounded bg-amber-600 py-2 px-2 text-xs text-white data-[hover]:bg-amber-500 data-[active]:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => unsetMapping('location', r)} disabled={isScrapingRunning}>Reset Location</Button>
                         }
                     </div>
                 </td>
@@ -296,6 +401,39 @@ export default function Home() {
                 </div>
             </Dialog>
 
+            <Dialog open={errorModalOpen} onClose={() => setErrorModalOpen(false)} className="relative z-50">
+                <div className="fixed inset-0 flex w-screen items-center justify-center bg-black/30 p-4">
+                     <DialogPanel className="max-w-4xl w-full max-h-[95vh] overflow-auto space-y-4 border bg-white p-6 rounded">
+                        <DialogTitle className="font-bold text-xl">Scraping Error Details</DialogTitle>
+                        <Description className="text-sm text-gray-600">
+                            Error occurred during scraping for site <span className="font-semibold">{site}</span>.
+                        </Description>
+                        <div className="mt-4">
+                            <div className="font-medium mb-2">Error:</div>
+                              <pre className="bg-gray-100 p-4 rounded text-sm font-mono whitespace-pre overflow-auto max-h-[70vh]">{errorDetails}</pre>
+                        </div>
+                        <div className="flex gap-4 pt-4">
+                            <Button className="rounded bg-gray-600 py-2 px-4 text-sm text-white data-[hover]:bg-gray-500 data-[active]:bg-gray-700" onClick={() => setErrorModalOpen(false)}>Close</Button>
+                        </div>
+                    </DialogPanel>
+                </div>
+            </Dialog>
+
+            <Dialog open={confirmScrapeOpen} onClose={() => setConfirmScrapeOpen(false)} className="relative z-50">
+                <div className="fixed inset-0 flex w-screen items-center justify-center bg-black/30 p-4">
+                     <DialogPanel className="max-w-lg w-full max-h-[90vh] overflow-auto space-y-4 border bg-white p-6 rounded">
+                        <DialogTitle className="font-bold text-xl">Confirm Scrape</DialogTitle>
+                        <Description className="text-sm text-gray-600">
+                            Are you sure you want to scrape site <span className="font-semibold">{site}</span>? This will start a new scraping job.
+                        </Description>
+                        <div className="flex gap-4 pt-4">
+                            <Button className="rounded bg-gray-600 py-2 px-4 text-sm text-white data-[hover]:bg-gray-500 data-[active]:bg-gray-700" onClick={() => setConfirmScrapeOpen(false)}>Cancel</Button>
+                            <Button className="rounded bg-emerald-600 py-2 px-4 text-sm text-white data-[hover]:bg-emerald-500 data-[active]:bg-emerald-700" onClick={performScrape}>Scrape</Button>
+                        </div>
+                    </DialogPanel>
+                </div>
+            </Dialog>
+
             <h1 className="text-xl font-bold text-left mb-4">Match Surfaces</h1>
             <Field >
                 <div className="flex justify-start items-center">
@@ -304,7 +442,46 @@ export default function Home() {
                         <option value="">All</option>
                         {options}
                     </Select>
-                    {site ? <span className="ml-4 text-sm font-medium">Selected: {site}</span> : <span className="ml-4 text-sm font-medium">All sites</span>}
+                    {site ? (
+                        <div className="ml-4 text-sm font-medium flex items-center gap-2 flex-wrap">
+                            <span>Selected: {site}</span>
+                            <Button
+                                className="rounded bg-sky-600 py-1 px-2 text-xs text-white data-[hover]:bg-sky-500 data-[active]:bg-sky-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                onClick={openConfirmScrape}
+                                disabled={scrapeTriggerLoading || scrapeStatusLoading || isScrapingRunning}
+                            >
+                                {scrapeTriggerLoading ? 'Refreshing...' : 'Refresh'}
+                            </Button>
+                            {scrapeStatusLoading && (
+                                <span className="text-gray-500">(loading...)</span>
+                            )}
+                            {!scrapeStatusLoading && siteScrapingStatus && (
+                                <>
+                                    {siteScrapingStatus.status === 'running' && (
+                                        <span className="text-blue-600 font-semibold">Running</span>
+                                    )}
+                                    {siteScrapingStatus.status === 'failed' && (
+                                        <span className="text-red-600 font-semibold">Failed</span>
+                                    )}
+                                    {siteScrapingStatus.last_scraped_at && (
+                                        <span className="text-gray-600 ml-2">
+                                            (Last scraped: {new Date(siteScrapingStatus.last_scraped_at).toLocaleDateString()})
+                                        </span>
+                                    )}
+                                    {siteScrapingStatus.status === 'failed' && siteScrapingStatus.error && (
+                                        <Button
+                                            className="rounded bg-red-100 text-red-700 py-1 px-2 text-xs hover:bg-red-200 ml-2"
+                                            onClick={() => openErrorModal(siteScrapingStatus.error)}
+                                        >
+                                            View Errors
+                                        </Button>
+                                    )}
+                                </>
+                            )}
+                        </div>
+                    ) : (
+                        <span className="ml-4 text-sm font-medium">All sites</span>
+                    )}
                 </div>
             </Field >
             <Field className="my-5">
