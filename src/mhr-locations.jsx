@@ -116,6 +116,30 @@ export default function MHRLocations() {
         setPage(1);
     };
 
+    const handleExport = () => {
+        setBusy(true);
+        const params = new URLSearchParams();
+        if (debouncedNameFilter) {
+            params.append('name', debouncedNameFilter);
+        }
+        if (debouncedprovinceFilter) {
+            params.append('province', debouncedprovinceFilter);
+        }
+        params.append('export', '1');
+        api.get(apiurl + `/mhr-locations?${params.toString()}`, {
+            responseType: 'blob'
+        }).then((resp) => {
+            const url = window.URL.createObjectURL(new Blob([resp.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `mhr-locations-${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+        }).catch(e => console.error(e)).finally(() => setBusy(false));
+    };
+
     const handlePrevPage = () => setPage(p => Math.max(1, p - 1))
     const handleNextPage = () => setPage(p => p + 1)
     const handleFirstPage = () => setPage(1)
@@ -191,46 +215,57 @@ export default function MHRLocations() {
             }
             <LocationDialog api={api} siteLoc={currSiteLoc} isOpen={isLocDiagOpen} setIsOpen={setIsLocDiagOpen} locSelected={locationSelected} />
 
-            <div className="flex justify-between items-center my-4 p-4 bg-gray-50 rounded-lg">
-                <div className="flex gap-4 items-center">
-                    <input
-                        type="text"
-                        value={nameFilter}
-                        onChange={e => setNameFilter(e.target.value)}
-                        className="px-2 py-1 border border-gray-300 rounded-md"
-                        placeholder="Filter by name..."
-                    />
-                    <input
-                        type="text"
-                        value={provinceFilter}
-                        onChange={e => setprovinceFilter(e.target.value)}
-                        className="px-2 py-1 border border-gray-300 rounded-md"
-                        placeholder="Filter by province..."
-                    />
-                    <button
-                        onClick={handleClearFilters}
-                        className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md disabled:opacity-50"
-                        disabled={isBusy || (nameFilter === '' && provinceFilter === '')}
-                    >
-                        Clear Filters
-                    </button>
+            <div className="my-4 p-4 bg-gray-50 rounded-lg">
+                <div className="flex justify-between items-center mb-4">
+                    <div className="flex gap-4 items-center">
+                        <input
+                            type="text"
+                            value={nameFilter}
+                            onChange={e => setNameFilter(e.target.value)}
+                            className="px-2 py-1 border border-gray-300 rounded-md"
+                            placeholder="Filter by name..."
+                        />
+                        <input
+                            type="text"
+                            value={provinceFilter}
+                            onChange={e => setprovinceFilter(e.target.value)}
+                            className="px-2 py-1 border border-gray-300 rounded-md"
+                            placeholder="Filter by province..."
+                        />
+                        <button
+                            onClick={handleClearFilters}
+                            className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md disabled:opacity-50"
+                            disabled={isBusy || (nameFilter === '' && provinceFilter === '')}
+                        >
+                            Clear Filters
+                        </button>
+                    </div>
                 </div>
-                <div className="flex items-center gap-2">
-                    <label htmlFor="pageSize" className="text-sm font-medium">Per Page:</label>
-                    <select
-                        id="pageSize"
-                        value={pageSize}
-                        onChange={e => {
-                            setPageSize(Number(e.target.value));
-                        }}
-                        className="px-2 py-1 border border-gray-300 rounded-md bg-white"
+                <div className="flex justify-end items-center gap-4">
+                    <div className="flex items-center gap-2">
+                        <label htmlFor="pageSize" className="text-sm font-medium">Per Page:</label>
+                        <select
+                            id="pageSize"
+                            value={pageSize}
+                            onChange={e => {
+                                setPageSize(Number(e.target.value));
+                            }}
+                            className="px-2 py-1 border border-gray-300 rounded-md bg-white"
+                            disabled={isBusy}
+                        >
+                            <option value={10}>10</option>
+                            <option value={25}>25</option>
+                            <option value={50}>50</option>
+                            <option value={100}>100</option>
+                        </select>
+                    </div>
+                    <button
+                        onClick={handleExport}
+                        className="px-4 py-2 bg-green-600 text-white rounded-md disabled:opacity-50"
                         disabled={isBusy}
                     >
-                        <option value={10}>10</option>
-                        <option value={25}>25</option>
-                        <option value={50}>50</option>
-                        <option value={100}>100</option>
-                    </select>
+                        Export CSV
+                    </button>
                 </div>
             </div>
 
