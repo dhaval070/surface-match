@@ -63,6 +63,10 @@ export default function LocationDialog(props) {
                             <DialogTitle className="font-bold">Select location for <span className="text-orange-500">{}</span></DialogTitle>
                             <Description></Description>
 
+                            <div className="flex gap-2">
+                                <Button className="rounded bg-red-600 py-2 px-4 text-sm text-white data-[hover]:bg-red-500 data-[active]:bg-red-700" onClick={() => props.locSelected(-1, props.siteLoc)}>Dnf</Button>
+                            </div>
+
                             <div className="flex items-center justify-between mb-2">
                                 <input type="text" value={nameFilter} onChange={e => setNameFilter(e.target.value)} placeholder="Filter by name..." className="px-2 py-1 border rounded-md w-64" />
                                 <div className="text-sm text-gray-600">Showing {pagination && pagination.total} results</div>
