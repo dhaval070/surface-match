@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
 import './App.css'
-import { Field, Button } from '@headlessui/react'
+import { Field, Button, Select } from '@headlessui/react'
 import { useAuth } from './AuthProvider.jsx'
 import LocationDialog from './LocationDialog.jsx'
+import MhrLbNotesDialog from './MhrLbNotesDialog.jsx'
 
 const apiurl = import.meta.env.VITE_API_URL
 
@@ -26,31 +27,60 @@ export default function MHRLocations() {
     const [isBusy, setBusy] = useState(false)
     const [selectorFor, setSelectorFor] = useState(null)
     const [isLocDiagOpen, setIsLocDiagOpen] = useState(false)
+    const [isNotesDialogOpen, setIsNotesDialogOpen] = useState(false)
+    const [editingMhrId, setEditingMhrId] = useState(null)
+    const [editingNotes, setEditingNotes] = useState('')
+    const [editingRinkName, setEditingRinkName] = useState('')
 
     const [nameFilter, setNameFilter] = useState('');
     const [provinceFilter, setprovinceFilter] = useState('');
+    const [livebarnFilter, setLivebarnFilter] = useState('');
     const debouncedNameFilter = useDebounce(nameFilter, 500);
     const debouncedprovinceFilter = useDebounce(provinceFilter, 500);
+    const debouncedLivebarnFilter = useDebounce(livebarnFilter, 500);
 
 
     const [pageSize, setPageSize] = useState(25)
     const [page, setPage] = useState(1);
     const [total, setTotal] = useState(0);
+    const [sort, setSort] = useState('mhr_id');
+    const [order, setOrder] = useState('asc');
+
+    const handleSort = (column) => {
+        if (sort === column) {
+            setOrder(order === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSort(column);
+            setOrder('asc');
+        }
+        setPage(1);
+    };
+
+    const formatDate = (dateString) => {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        return date.toLocaleDateString();
+    };
     const auth = useAuth()
     const api = auth.api
     const dropdownRef = useRef(null)
 
-    const fetchData = async (api, page, pageSize, debouncedNameFilter, debouncedprovinceFilter) => {
+    const fetchData = async (api, page, pageSize, debouncedNameFilter, debouncedprovinceFilter, debouncedLivebarnFilter, sort, order) => {
         setBusy(true)
         const params = new URLSearchParams({
             page: page,
             perPage: pageSize,
+            sort: sort,
+            order: order,
         });
         if (debouncedNameFilter) {
             params.append('name', debouncedNameFilter);
         }
         if (debouncedprovinceFilter) {
             params.append('province', debouncedprovinceFilter);
+        }
+        if (debouncedLivebarnFilter) {
+            params.append('livebarn_location_id', debouncedLivebarnFilter);
         }
 
         api.get(apiurl + `/mhr-locations?${params.toString()}`).then((resp) => {
@@ -61,8 +91,8 @@ export default function MHRLocations() {
     };
 
     useEffect(function() {
-        fetchData(api, page, pageSize, debouncedNameFilter, debouncedprovinceFilter);
-    }, [api, page, pageSize, debouncedNameFilter, debouncedprovinceFilter]);
+        fetchData(api, page, pageSize, debouncedNameFilter, debouncedprovinceFilter, debouncedLivebarnFilter, sort, order);
+    }, [api, page, pageSize, debouncedNameFilter, debouncedprovinceFilter, debouncedLivebarnFilter, sort, order]);
 
 
     useEffect(function() {
@@ -105,25 +135,42 @@ export default function MHRLocations() {
         api.post(apiurl + "/mhr-set-location", {
             location_id: id,
             mhr_id: siteloc.mhr_id,
-        }).then(() => fetchData(api, page, pageSize)).catch((e) => console.error(e)).finally(() => {
+        }).then(() => fetchData(api, page, pageSize, debouncedNameFilter, debouncedprovinceFilter, debouncedLivebarnFilter, sort, order)).catch((e) => console.error(e)).finally(() => {
             setBusy(false)
         })
+    }
+
+    let openNotesDialog = function(rec) {
+        setEditingMhrId(rec.mhr_id)
+        setEditingRinkName(rec.rink_name)
+        setEditingNotes(rec.lb_notes || '')
+        setIsNotesDialogOpen(true)
+    }
+
+    const handleNotesSaveSuccess = () => {
+        fetchData(api, page, pageSize, debouncedNameFilter, debouncedprovinceFilter, debouncedLivebarnFilter, sort, order)
     }
 
     const handleClearFilters = () => {
         setNameFilter('');
         setprovinceFilter('');
+        setLivebarnFilter('');
         setPage(1);
     };
 
     const handleExport = () => {
         setBusy(true);
         const params = new URLSearchParams();
+        params.append('sort', sort);
+        params.append('order', order);
         if (debouncedNameFilter) {
             params.append('name', debouncedNameFilter);
         }
         if (debouncedprovinceFilter) {
             params.append('province', debouncedprovinceFilter);
+        }
+        if (debouncedLivebarnFilter) {
+            params.append('livebarn_location_id', debouncedLivebarnFilter);
         }
         params.append('export', '1');
         api.get(apiurl + `/mhr-locations?${params.toString()}`, {
@@ -153,14 +200,14 @@ export default function MHRLocations() {
         api.post(apiurl + "/mhr-unset-mapping", {
             mhr_id: siteloc.mhr_id,
             type: type,
-        }).then(() => fetchData(api, page, pageSize)).catch((e) => console.error(e)).finally(() => {
+        }).then(() => fetchData(api, page, pageSize, debouncedNameFilter, debouncedprovinceFilter, debouncedLivebarnFilter, sort, order)).catch((e) => console.error(e)).finally(() => {
             setBusy(false)
         })
     }
 
     useEffect(() => {
         setPage(1);
-    }, [debouncedNameFilter, debouncedprovinceFilter, pageSize]);
+    }, [debouncedNameFilter, debouncedprovinceFilter, debouncedLivebarnFilter, pageSize]);
 
     let rows = []
 
@@ -186,7 +233,17 @@ export default function MHRLocations() {
                         <span>{r.livebarn_location_id}</span>
                     </div>
                 </td>
-                <td className="text-left">{r.LiveBarnLocation.name}</td>
+                 <td className="text-left">{r.LiveBarnLocation.name}</td>
+                 <td className="text-left">
+                     <button 
+                         onClick={() => openNotesDialog(r)}
+                         className="text-sky-600 hover:text-sky-800 focus:outline-none"
+                         title="Edit LiveBarn notes"
+                     >
+                         <i className="fas fa-edit"></i>
+                     </button>
+                 </td>
+                   <td className="text-left">{formatDate(r.created_at)}</td>
                 <td className="text-left whitespace-nowrap w-48">
                     <div className="relative inline-block overflow-visible" ref={selectorFor === r.location ? dropdownRef : null}>
                         <Button className="rounded bg-sky-600 py-2 px-2 text-xs text-white data-[hover]:bg-sky-500 data-[active]:bg-sky-700" onClick={() => setSelectorFor(selectorFor === r.mhr_id ? null : r.mhr_id)}>Change</Button>
@@ -214,6 +271,7 @@ export default function MHRLocations() {
                 </div>
             }
             <LocationDialog api={api} siteLoc={currSiteLoc} isOpen={isLocDiagOpen} setIsOpen={setIsLocDiagOpen} locSelected={locationSelected} />
+            <MhrLbNotesDialog api={api} isOpen={isNotesDialogOpen} setIsOpen={setIsNotesDialogOpen} mhrId={editingMhrId} rinkName={editingRinkName} initialNotes={editingNotes} onSaveSuccess={handleNotesSaveSuccess} />
 
             <div className="my-4 p-4 bg-gray-50 rounded-lg">
                 <div className="flex justify-between items-center mb-4">
@@ -232,10 +290,22 @@ export default function MHRLocations() {
                             className="px-2 py-1 border border-gray-300 rounded-md"
                             placeholder="Filter by province..."
                         />
+                        <div className="flex items-center gap-2">
+                            <label className="text-sm font-medium">LiveBarn:</label>
+                            <Select
+                                value={livebarnFilter}
+                                onChange={e => setLivebarnFilter(e.target.value)}
+                                className="px-2 py-1 border border-gray-300 rounded-md"
+                            >
+                                <option value="">All</option>
+                                <option value="1">Livebarn only</option>
+                                <option value="0">No Livebarn</option>
+                            </Select>
+                        </div>
                         <button
                             onClick={handleClearFilters}
                             className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md disabled:opacity-50"
-                            disabled={isBusy || (nameFilter === '' && provinceFilter === '')}
+                            disabled={isBusy || (nameFilter === '' && provinceFilter === '' && livebarnFilter === '')}
                         >
                             Clear Filters
                         </button>
@@ -273,15 +343,17 @@ export default function MHRLocations() {
                 <table className="bg-gray-100 w-full">
                     <thead className="sticky top-0">
                         <tr className="bg-slate-300">
-                            <th>MHR ID</th>
+                             <th onClick={() => handleSort('mhr_id')} className="cursor-pointer">MHR ID {sort === 'mhr_id' ? (order === 'asc' ? ' ↑' : ' ↓') : ''}</th>
                             <th>Location</th>
                             <th>Has LiveBarn</th>
                             <th>Home Teams</th>
                             <th>Address</th>
                             <th>State/Province</th>
                             <th>Livebarn Location ID</th>
-                            <th>Livebarn Location Name</th>
-                            <th className="w-48">Actions</th>
+                              <th>Livebarn Location Name</th>
+                              <th>LB Notes</th>
+                               <th onClick={() => handleSort('created_at')} className="cursor-pointer">Created At {sort === 'created_at' ? (order === 'asc' ? ' ↑' : ' ↓') : ''}</th>
+                              <th className="w-48">Actions</th>
                         </tr>
 
                     </thead>
