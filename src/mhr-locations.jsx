@@ -234,16 +234,27 @@ export default function MHRLocations() {
                     </div>
                 </td>
                  <td className="text-left">{r.LiveBarnLocation.name}</td>
-                 <td className="text-left">
-                     <button 
-                         onClick={() => openNotesDialog(r)}
-                         className="text-sky-600 hover:text-sky-800 focus:outline-none"
-                         title="Edit LiveBarn notes"
-                     >
-                         <i className="fas fa-edit"></i>
-                     </button>
-                 </td>
-                   <td className="text-left">{formatDate(r.created_at)}</td>
+                  <td className="text-left">
+                      <button 
+                          onClick={() => openNotesDialog(r)}
+                          className="text-sky-600 hover:text-sky-800 focus:outline-none"
+                          title="Edit LiveBarn notes"
+                      >
+                          <i className="fas fa-edit"></i>
+                      </button>
+                  </td>
+                  <td className="text-left">
+                      {r.notes && (
+                          <div className="group relative inline-block">
+                               <i className="fas fa-sticky-note text-amber-600 hover:text-amber-700 cursor-pointer" title="MHR Notes"></i>
+                               <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block z-50 w-64 max-h-48 overflow-y-auto p-2 bg-gray-900 text-white text-xs rounded shadow-lg border border-gray-700">
+                                  <div className="whitespace-pre-wrap break-words">{r.notes}</div>
+                                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-900"></div>
+                              </div>
+                          </div>
+                      )}
+                  </td>
+                    <td className="text-left">{formatDate(r.created_at)}</td>
                 <td className="text-left whitespace-nowrap w-48">
                     <div className="relative inline-block overflow-visible" ref={selectorFor === r.location ? dropdownRef : null}>
                         <Button className="rounded bg-sky-600 py-2 px-2 text-xs text-white data-[hover]:bg-sky-500 data-[active]:bg-sky-700" onClick={() => setSelectorFor(selectorFor === r.mhr_id ? null : r.mhr_id)}>Change</Button>
@@ -351,8 +362,9 @@ export default function MHRLocations() {
                             <th>State/Province</th>
                             <th>Livebarn Location ID</th>
                               <th>Livebarn Location Name</th>
-                              <th>LB Notes</th>
-                               <th onClick={() => handleSort('created_at')} className="cursor-pointer">Created At {sort === 'created_at' ? (order === 'asc' ? ' ↑' : ' ↓') : ''}</th>
+                               <th>LB Notes</th>
+                               <th>MHR Notes</th>
+                                <th onClick={() => handleSort('created_at')} className="cursor-pointer">Created At {sort === 'created_at' ? (order === 'asc' ? ' ↑' : ' ↓') : ''}</th>
                               <th className="w-48">Actions</th>
                         </tr>
 
