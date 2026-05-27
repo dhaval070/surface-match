@@ -142,7 +142,15 @@ export default function Events() {
         console.log("First event object keys:", Object.keys(events[0]))
         rows = events.map((r, index) => (
             <tr key={r.id || index} className="even:bg-gray-50 odd:bg-gray-200">
-                <td className="text-left px-4 py-2">{r.id}</td>
+                <td className="text-left px-4 py-2">
+                    {r.id}
+                    {r.event_id && r.event_id !== '' && r.event_id != 0 && (
+                        <>
+                            <br />
+                            <span className="text-xs text-gray-500">{r.event_id}</span>
+                        </>
+                    )}
+                </td>
                 <td className="text-left px-4 py-2">{r.site}</td>
                 <td className="text-left px-4 py-2">{r.datetime}</td>
                 <td className="text-left px-4 py-2">{r.home_team}</td>
@@ -201,7 +209,7 @@ export default function Events() {
     let options = []
     if (allSites.length > 0) {
         options = allSites.map((r) => (
-            <option key={r.site_name} value={r.site_name}>{r.display_name || r.site_name}</option>
+            <option key={r.site_name} value={r.site_name}>{r.display_name} ({r.site_name})</option>
         ))
     }
 
@@ -343,7 +351,7 @@ export default function Events() {
                 <table className="table-auto bg-gray-100 w-full">
                     <thead className="sticky top-0">
                         <tr className="bg-slate-300">
-                            <th className="px-4 py-2">ID</th>
+                            <th className="px-4 py-2">ID / Event ID</th>
                             <th className="px-4 py-2">Site</th>
                             <th className="px-4 py-2">Date/Time</th>
                             <th className="px-4 py-2">Home Team</th>

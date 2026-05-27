@@ -312,16 +312,16 @@ export default function Home() {
                     <div className="relative inline-block overflow-visible" ref={selectorFor === `${r.site}-${r.location}` ? dropdownRef : null}>
                         <Button className="rounded bg-sky-600 py-2 px-2 text-xs text-white data-[hover]:bg-sky-500 data-[active]:bg-sky-700 disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => setSelectorFor(selectorFor === `${r.site}-${r.location}` ? null : `${r.site}-${r.location}`)} disabled={isScrapingRunning}>Change</Button>
                         {selectorFor === `${r.site}-${r.location}` && <div className="absolute right-0 mt-1 w-36 bg-white border rounded shadow-md flex flex-col" style={{ zIndex: 9999 }}>
-                             <button className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => { setSelectorFor(null); assignSurface(r); }} disabled={isScrapingRunning}>Surface</button>
-                             <button className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => { setSelectorFor(null); setLocationModalSiteLoc(r); setShowLocationsModal(true); }} disabled={isScrapingRunning}>Location</button>
+                            <button className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => { setSelectorFor(null); assignSurface(r); }} disabled={isScrapingRunning}>Surface</button>
+                            <button className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => { setSelectorFor(null); setLocationModalSiteLoc(r); setShowLocationsModal(true); }} disabled={isScrapingRunning}>Location</button>
                         </div>}
                     </div>
                     <div className="mt-2 flex gap-2">
                         {r.surface_id != 0 &&
-                             <Button className="rounded bg-emerald-600 py-2 px-2 text-xs text-white data-[hover]:bg-emerald-500 data-[active]:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => unsetMapping('surface', r)} disabled={isScrapingRunning}>Reset Surface</Button>
+                            <Button className="rounded bg-emerald-600 py-2 px-2 text-xs text-white data-[hover]:bg-emerald-500 data-[active]:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => unsetMapping('surface', r)} disabled={isScrapingRunning}>Reset Surface</Button>
                         }
                         {r.location_id != 0 &&
-                             <Button className="rounded bg-amber-600 py-2 px-2 text-xs text-white data-[hover]:bg-amber-500 data-[active]:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => unsetMapping('location', r)} disabled={isScrapingRunning}>Reset Location</Button>
+                            <Button className="rounded bg-amber-600 py-2 px-2 text-xs text-white data-[hover]:bg-amber-500 data-[active]:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => unsetMapping('location', r)} disabled={isScrapingRunning}>Reset Location</Button>
                         }
                     </div>
                 </td>
@@ -332,7 +332,7 @@ export default function Home() {
     let options = []
     if (allSites.length > 0) {
         options = allSites.map((r) => (
-            <option key={r.site_name} value={r.site_name}>{r.display_name || r.site_name}</option>
+            <option key={r.site_name} value={r.site_name}>{r.display_name} ({r.site_name})</option>
         ))
     }
 
@@ -403,14 +403,14 @@ export default function Home() {
 
             <Dialog open={errorModalOpen} onClose={() => setErrorModalOpen(false)} className="relative z-50">
                 <div className="fixed inset-0 flex w-screen items-center justify-center bg-black/30 p-4">
-                     <DialogPanel className="max-w-4xl w-full max-h-[95vh] overflow-auto space-y-4 border bg-white p-6 rounded">
+                    <DialogPanel className="max-w-4xl w-full max-h-[95vh] overflow-auto space-y-4 border bg-white p-6 rounded">
                         <DialogTitle className="font-bold text-xl">Scraping Error Details</DialogTitle>
                         <Description className="text-sm text-gray-600">
                             Error occurred during scraping for site <span className="font-semibold">{site}</span>.
                         </Description>
                         <div className="mt-4">
                             <div className="font-medium mb-2">Error:</div>
-                              <pre className="bg-gray-100 p-4 rounded text-sm font-mono whitespace-pre overflow-auto max-h-[70vh]">{errorDetails}</pre>
+                            <pre className="bg-gray-100 p-4 rounded text-sm font-mono whitespace-pre overflow-auto max-h-[70vh]">{errorDetails}</pre>
                         </div>
                         <div className="flex gap-4 pt-4">
                             <Button className="rounded bg-gray-600 py-2 px-4 text-sm text-white data-[hover]:bg-gray-500 data-[active]:bg-gray-700" onClick={() => setErrorModalOpen(false)}>Close</Button>
@@ -421,7 +421,7 @@ export default function Home() {
 
             <Dialog open={confirmScrapeOpen} onClose={() => setConfirmScrapeOpen(false)} className="relative z-50">
                 <div className="fixed inset-0 flex w-screen items-center justify-center bg-black/30 p-4">
-                     <DialogPanel className="max-w-lg w-full max-h-[90vh] overflow-auto space-y-4 border bg-white p-6 rounded">
+                    <DialogPanel className="max-w-lg w-full max-h-[90vh] overflow-auto space-y-4 border bg-white p-6 rounded">
                         <DialogTitle className="font-bold text-xl">Confirm Scrape</DialogTitle>
                         <Description className="text-sm text-gray-600">
                             Are you sure you want to scrape site <span className="font-semibold">{site}</span>? This will start a new scraping job.
