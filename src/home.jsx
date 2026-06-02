@@ -27,6 +27,8 @@ export default function Home() {
     const [siteLocCurrentPage, setSiteLocCurrentPage] = useState(1)
     const [siteLocPageSize, setSiteLocPageSize] = useState(25)
     const [siteLocPagination, setSiteLocPagination] = useState(null)
+    const [eventsMatched, setEventsMatched] = useState(0)
+    const [gamesClaimed, setGamesClaimed] = useState(0)
     const [siteScrapingStatus, setSiteScrapingStatus] = useState(null)
     const [scrapeStatusLoading, setScrapeStatusLoading] = useState(false)
     const [scrapeTriggerLoading, setScrapeTriggerLoading] = useState(false)
@@ -52,6 +54,8 @@ export default function Home() {
             } else {
                 setSiteLocPagination(null)
             }
+            setEventsMatched(resp.data?.events_matched ?? 0)
+            setGamesClaimed(resp.data?.games_claimed ?? 0)
         }).catch(e => console.error(e)).finally(() => setBusy(false))
     }, [site, api, siteLocCurrentPage, siteLocPageSize, debouncedLocationFilter])
 
@@ -481,6 +485,9 @@ export default function Home() {
                         </div>
                     ) : (
                         <span className="ml-4 text-sm font-medium">All sites</span>
+                    )}
+                    {(site && site.startsWith('gs_')) && (
+                        <span className="ml-auto text-sm text-gray-600">{eventsMatched} games matched | {gamesClaimed} games claimed</span>
                     )}
                 </div>
             </Field >
