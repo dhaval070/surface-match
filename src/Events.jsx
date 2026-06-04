@@ -34,6 +34,8 @@ export default function Events() {
     const [showConfirmDialog, setShowConfirmDialog] = useState(false)
     const [selectedSurfaceId, setSelectedSurfaceId] = useState(null)
     const [apiMessage, setApiMessage] = useState(null)
+    const [claimStatus, setClaimStatus] = useState("")
+    const [claimErrorPopup, setClaimErrorPopup] = useState(null)
 
     const debouncedSite = useDebounce(site, 500);
     const debouncedStartDate = useDebounce(startDate, 500);
@@ -51,7 +53,7 @@ export default function Events() {
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [debouncedSite, debouncedStartDate, debouncedEndDate, pageSize]);
+    }, [debouncedSite, debouncedStartDate, debouncedEndDate, pageSize, claimStatus]);
 
     useEffect(function() {
         setBusy(true)
@@ -68,6 +70,9 @@ export default function Events() {
         if (debouncedEndDate) {
             params.append('end_date', debouncedEndDate);
         }
+        if (claimStatus) {
+            params.append('claim_status', claimStatus);
+        }
 
         api.get(`${apiurl}/events?${params.toString()}`).then((resp) => {
             setEvents(resp.data.data)
@@ -75,7 +80,7 @@ export default function Events() {
         }).catch(e => {
             console.error("API Error:", e)
         }).finally(() => setBusy(false))
-    }, [api, currentPage, pageSize, debouncedSite, debouncedStartDate, debouncedEndDate]);
+    }, [api, currentPage, pageSize, debouncedSite, debouncedStartDate, debouncedEndDate, claimStatus]);
 
     const handleSetSurface = (event) => {
         setSelectedEvent(event);
@@ -115,6 +120,9 @@ export default function Events() {
             if (debouncedEndDate) {
                 params.append('end_date', debouncedEndDate);
             }
+            if (claimStatus) {
+                params.append('claim_status', claimStatus);
+            }
             return api.get(`${apiurl}/events?${params.toString()}`);
         }).then((resp) => {
             if (resp) {
@@ -143,11 +151,16 @@ export default function Events() {
         rows = events.map((r, index) => (
             <tr key={r.id || index} className="even:bg-gray-50 odd:bg-gray-200">
                 <td className="text-left px-4 py-2">
-                    {r.id}
+                    <span>{r.id}</span>
                     {r.event_id && r.event_id !== '' && r.event_id != 0 && (
                         <>
                             <br />
-                            <span className="text-xs text-gray-500">{r.event_id}</span>
+                            <span
+                                className={r.claim_status === 1 ? 'text-green-600 font-bold' : r.claim_status === 0 ? 'text-red-600 font-bold cursor-pointer' : ''}
+                                onClick={() => r.claim_status === 0 ? setClaimErrorPopup(r) : null}
+                            >
+                                {r.event_id}
+                            </span>
                         </>
                     )}
                 </td>
@@ -201,6 +214,7 @@ export default function Events() {
         setSite('');
         setStartDate('');
         setEndDate('');
+        setClaimStatus('');
         setCurrentPage(1);
     };
 
@@ -218,6 +232,7 @@ export default function Events() {
         if (debouncedStartDate) params.append('start_date', debouncedStartDate);
         if (debouncedEndDate) params.append('end_date', debouncedEndDate);
         if (debouncedSite) params.append('site', debouncedSite);
+        if (claimStatus) params.append('claim_status', claimStatus);
         params.append('export', '1');
         const url = `${apiurl}/events?${params.toString()}`;
         window.open(url, '_blank');
@@ -260,6 +275,28 @@ export default function Events() {
                                 onClick={() => handleUpdateSurface(true)}
                             >
                                 Yes, Update Future Events
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {claimErrorPopup && (
+                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+                    <div className="bg-white p-6 rounded-lg shadow-lg max-w-md">
+                        <h3 className="text-lg font-bold mb-4 text-red-600">Claim Error</h3>
+                        <div className="mb-4 space-y-2">
+                            <p><span className="font-medium">Error:</span> {claimErrorPopup.claim_error_message}</p>
+                            <p><span className="font-medium">HTTP Status:</span> {claimErrorPopup.claim_http_status_code}</p>
+                            <p><span className="font-medium">Created At:</span> {claimErrorPopup.claim_created_at}</p>
+                            <p><span className="font-medium">Updated At:</span> {claimErrorPopup.claim_updated_at}</p>
+                        </div>
+                        <div className="flex justify-end">
+                            <Button
+                                className="rounded bg-gray-300 py-2 px-4 text-sm text-gray-800 hover:bg-gray-400"
+                                onClick={() => setClaimErrorPopup(null)}
+                            >
+                                Close
                             </Button>
                         </div>
                     </div>
@@ -313,10 +350,25 @@ export default function Events() {
                             />
                         </div>
                     </Field>
+                    <Field>
+                        <div className="flex justify-start items-center gap-2">
+                            <Label className="text-sm/6 font-medium">Claim Status</Label>
+                            <Select
+                                onChange={(e) => setClaimStatus(e.currentTarget.value)}
+                                value={claimStatus}
+                                className="rounded border-solid outline outline-gray-400 outline-2 w-40"
+                                disabled={isBusy}
+                            >
+                                <option value="">All</option>
+                                <option value="success">Claimed</option>
+                                <option value="error">Claim Error</option>
+                            </Select>
+                        </div>
+                    </Field>
                     <button
                         onClick={handleClearFilters}
                         className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md disabled:opacity-50"
-                        disabled={isBusy || (site === '' && startDate === '' && endDate === '')}
+                        disabled={isBusy || (site === '' && startDate === '' && endDate === '' && claimStatus === '')}
                     >
                         Clear Filters
                     </button>
