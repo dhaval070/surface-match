@@ -2,8 +2,21 @@ import { useState, useEffect } from 'react'
 import './App.css'
 import { useAuth } from './AuthProvider.jsx'
 import KmasterVenueDialog from './KmasterVenueDialog.jsx'
+import { Field, Label, Select } from '@headlessui/react'
 
 const apiurl = import.meta.env.VITE_API_URL
+
+const US_STATES = [
+    'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA',
+    'HI','ID','IL','IN','IA','KS','KY','LA','ME','MD',
+    'MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ',
+    'NM','NY','NC','ND','OH','OK','OR','PA','RI','SC',
+    'SD','TN','TX','UT','VT','VA','WA','WV','WI','WY',
+]
+
+const CA_PROVINCES = [
+    'AB','BC','MB','NB','NL','NS','NT','NU','ON','PE','QC','SK','YT',
+]
 
 export default function KmasterVenues() {
     const [venues, setVenues] = useState([])
@@ -18,12 +31,19 @@ export default function KmasterVenues() {
     const [deleteConfirm, setDeleteConfirm] = useState(null)
     const [apiMessage, setApiMessage] = useState(null)
 
+    const [filterCountry, setFilterCountry] = useState('')
+    const [filterState, setFilterState] = useState('')
+    const [filterLivebarn, setFilterLivebarn] = useState('')
+
     const auth = useAuth()
     const api = auth.api
 
     const fetchVenues = (p, ps) => {
         setBusy(true)
         const params = new URLSearchParams({ page: p, perPage: ps })
+        if (filterCountry) params.append('country', filterCountry)
+        if (filterState) params.append('state', filterState)
+        if (filterLivebarn !== '') params.append('livebarn', filterLivebarn)
         api.get(`${apiurl}/kmaster-venues?${params.toString()}`).then((resp) => {
             setVenues(resp.data.data || [])
             setTotal(resp.data.total || 0)
@@ -35,7 +55,7 @@ export default function KmasterVenues() {
 
     useEffect(() => {
         fetchVenues(page, pageSize)
-    }, [api, page, pageSize])
+    }, [api, page, pageSize, filterCountry, filterState, filterLivebarn])
 
     const totalPages = Math.ceil(total / pageSize)
 
@@ -168,30 +188,76 @@ export default function KmasterVenues() {
 
             <h1 className="text-xl font-bold text-left mb-4">KMaster Venues</h1>
 
-            <div className="flex justify-between items-center my-4 p-4 bg-gray-50 rounded-lg">
-                <button
-                    onClick={openCreate}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-500"
-                >
-                    + Add Venue
-                </button>
-                <div className="flex items-center gap-2">
-                    <label htmlFor="pageSize" className="text-sm font-medium">Per Page:</label>
-                    <select
-                        id="pageSize"
-                        value={pageSize}
-                        onChange={e => {
-                            setPageSize(Number(e.target.value))
-                            setPage(1)
-                        }}
-                        className="px-2 py-1 border border-gray-300 rounded-md bg-white"
-                        disabled={isBusy}
+            <div className="mb-4 flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-4">
+                    <Field className="flex items-center space-x-2">
+                        <Label className="text-sm font-medium whitespace-nowrap">Country</Label>
+                        <Select
+                            value={filterCountry}
+                            onChange={e => { setFilterCountry(e.target.value); setFilterState('') }}
+                            className="rounded border border-gray-300 px-3 py-2 text-sm"
+                        >
+                            <option value="">All</option>
+                            <option value="USA">USA</option>
+                            <option value="CA">CA</option>
+                        </Select>
+                    </Field>
+
+                    <Field className="flex items-center space-x-2">
+                        <Label className="text-sm font-medium whitespace-nowrap">State/Province</Label>
+                        <Select
+                            value={filterState}
+                            onChange={e => setFilterState(e.target.value)}
+                            className="rounded border border-gray-300 px-3 py-2 text-sm"
+                        >
+                            <option value="">All</option>
+                            {filterCountry === 'USA' && US_STATES.map(s => (
+                                <option key={s} value={s}>{s}</option>
+                            ))}
+                            {filterCountry === 'CA' && CA_PROVINCES.map(s => (
+                                <option key={s} value={s}>{s}</option>
+                            ))}
+                        </Select>
+                    </Field>
+
+                    <Field className="flex items-center space-x-2">
+                        <Label className="text-sm font-medium whitespace-nowrap">LiveBarn</Label>
+                        <Select
+                            value={filterLivebarn}
+                            onChange={e => setFilterLivebarn(e.target.value)}
+                            className="rounded border border-gray-300 px-3 py-2 text-sm"
+                        >
+                            <option value="">All</option>
+                            <option value="true">Matched</option>
+                            <option value="false">Not Matched</option>
+                        </Select>
+                    </Field>
+                </div>
+                <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                        <label htmlFor="pageSize" className="text-sm font-medium">Per Page:</label>
+                        <select
+                            id="pageSize"
+                            value={pageSize}
+                            onChange={e => {
+                                setPageSize(Number(e.target.value))
+                                setPage(1)
+                            }}
+                            className="px-2 py-1 border border-gray-300 rounded-md bg-white"
+                            disabled={isBusy}
+                        >
+                            <option value={10}>10</option>
+                            <option value={25}>25</option>
+                            <option value={50}>50</option>
+                            <option value={100}>100</option>
+                        </select>
+                    </div>
+                    <button
+                        onClick={openCreate}
+                        className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-500"
                     >
-                        <option value={10}>10</option>
-                        <option value={25}>25</option>
-                        <option value={50}>50</option>
-                        <option value={100}>100</option>
-                    </select>
+                        + Add Venue
+                    </button>
                 </div>
             </div>
 

@@ -72,6 +72,12 @@ export default function KmasterVenueDialog(props) {
 
     const isEditing = !!props.venue
 
+    const renderMatchIcon = (matched) => {
+        if (matched === true) return <span className="fas fa-check-circle text-green-600 ml-1" title="Matched" />
+        if (matched === false) return <span className="fas fa-times-circle text-red-600 ml-1" title="Not matched" />
+        return null
+    }
+
     const handleChange = (field, value) => {
         setForm(prev => ({ ...prev, [field]: value }))
     }
@@ -268,7 +274,7 @@ export default function KmasterVenueDialog(props) {
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium mb-1">LiveBarn Venue ID</label>
+                                <label className="block text-sm font-medium mb-1">LiveBarn Venue ID {props.venue ? renderMatchIcon(props.venue.livebarn_venue_id_matched) : null}</label>
                                 <input
                                     type="number"
                                     value={form.livebarn_venue_id}
@@ -277,7 +283,7 @@ export default function KmasterVenueDialog(props) {
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium mb-1">MHR Venue ID</label>
+                                <label className="block text-sm font-medium mb-1">MHR Venue ID {props.venue ? renderMatchIcon(props.venue.mhr_venue_id_matched) : null}</label>
                                 <input
                                     type="number"
                                     value={form.mhr_venue_id}
