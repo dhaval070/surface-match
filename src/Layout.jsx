@@ -61,6 +61,9 @@ export default function Layout() {
                             <button className={navLinkClass("/users")} onClick={() => navigate("/users")}>
                                 Users
                             </button>
+                            <button className={navLinkClass("/kmaster-venues")} onClick={() => navigate("/kmaster-venues")}>
+                                KMaster Venues
+                            </button>
                         </div>
                         <div className="flex items-center space-x-4">
                             <Menu as="div" className="relative inline-block text-left">
