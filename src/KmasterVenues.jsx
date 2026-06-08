@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import './App.css'
 import { useAuth } from './AuthProvider.jsx'
 import KmasterVenueDialog from './KmasterVenueDialog.jsx'
+import VenueDetailDialog from './VenueDetailDialog.jsx'
 import { Field, Label, Select } from '@headlessui/react'
 
 const apiurl = import.meta.env.VITE_API_URL
@@ -30,6 +31,11 @@ export default function KmasterVenues() {
 
     const [deleteConfirm, setDeleteConfirm] = useState(null)
     const [apiMessage, setApiMessage] = useState(null)
+
+    const [detailData, setDetailData] = useState(null)
+    const [detailBusy, setDetailBusy] = useState(false)
+    const [detailOpen, setDetailOpen] = useState(false)
+    const [detailTitle, setDetailTitle] = useState('')
 
     const [filterCountry, setFilterCountry] = useState('')
     const [filterState, setFilterState] = useState('')
@@ -99,6 +105,30 @@ export default function KmasterVenues() {
         }).finally(() => setBusy(false))
     }
 
+    const fetchLivebarnDetail = (id) => {
+        setDetailBusy(true)
+        setDetailTitle(`LiveBarn Location #${id}`)
+        setDetailOpen(true)
+        api.get(`${apiurl}/locations/${id}`).then(resp => {
+            setDetailData(resp.data)
+        }).catch(e => {
+            console.error("API Error:", e)
+            setDetailData(null)
+        }).finally(() => setDetailBusy(false))
+    }
+
+    const fetchMhrDetail = (id) => {
+        setDetailBusy(true)
+        setDetailTitle(`MHR Location #${id}`)
+        setDetailOpen(true)
+        api.get(`${apiurl}/mhr-locations/${id}`).then(resp => {
+            setDetailData(resp.data)
+        }).catch(e => {
+            console.error("API Error:", e)
+            setDetailData(null)
+        }).finally(() => setDetailBusy(false))
+    }
+
     const formatDate = (dateString) => {
         if (!dateString) return ''
         return new Date(dateString).toLocaleDateString()
@@ -116,8 +146,16 @@ export default function KmasterVenues() {
                 <td className="text-left px-4 py-2">{r.country}</td>
                 <td className="text-left px-4 py-2">{r.surfaces}</td>
                 <td className="text-left px-4 py-2">{r.account_status}</td>
-                <td className={`text-left px-4 py-2 ${r.livebarn_venue_id_matched === false && r.livebarn_venue_id ? 'text-red-600' : ''}`}>{r.livebarn_venue_id ?? ''}</td>
-                <td className={`text-left px-4 py-2 ${r.mhr_venue_id_matched === false && r.mhr_venue_id ? 'text-red-600' : ''}`}>{r.mhr_venue_id ?? ''}</td>
+                <td className={`text-left px-4 py-2 ${r.livebarn_venue_id_matched === false && r.livebarn_venue_id ? 'text-red-600' : ''}`}>
+                    {r.livebarn_venue_id
+                        ? <a href="#" onClick={e => { e.preventDefault(); fetchLivebarnDetail(r.livebarn_venue_id) }} className="text-blue-600 hover:text-blue-800 underline cursor-pointer">{r.livebarn_venue_id}</a>
+                        : ''}
+                </td>
+                <td className={`text-left px-4 py-2 ${r.mhr_venue_id_matched === false && r.mhr_venue_id ? 'text-red-600' : ''}`}>
+                    {r.mhr_venue_id
+                        ? <a href="#" onClick={e => { e.preventDefault(); fetchMhrDetail(r.mhr_venue_id) }} className="text-blue-600 hover:text-blue-800 underline cursor-pointer">{r.mhr_venue_id}</a>
+                        : ''}
+                </td>
                 <td className="text-left px-4 py-2">{formatDate(r.created_at)}</td>
                 <td className="text-left px-4 py-2 whitespace-nowrap">
                     <button
@@ -159,6 +197,14 @@ export default function KmasterVenues() {
                 api={api}
                 venue={editingVenue}
                 onSave={handleDialogSave}
+            />
+
+            <VenueDetailDialog
+                isOpen={detailOpen}
+                setIsOpen={setDetailOpen}
+                data={detailData}
+                isBusy={detailBusy}
+                title={detailTitle}
             />
 
             {deleteConfirm && (
