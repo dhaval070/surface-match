@@ -37,6 +37,32 @@ export default function KmasterVenues() {
     const [detailOpen, setDetailOpen] = useState(false)
     const [detailTitle, setDetailTitle] = useState('')
 
+    const handleExport = () => {
+        const params = new URLSearchParams()
+        params.append('export', 'json')
+        if (filterCountry) params.append('country', filterCountry)
+        if (filterState) params.append('state', filterState)
+        if (filterLivebarn !== '') params.append('livebarn', filterLivebarn)
+        api.get(`${apiurl}/kmaster-venues?${params.toString()}`, { responseType: 'blob' })
+            .then(resp => {
+                const url = window.URL.createObjectURL(new Blob([resp.data]))
+                const link = document.createElement('a')
+                link.href = url
+                link.setAttribute('download', `kmaster-venues-${new Date().toISOString().slice(0, 10)}.json`)
+                document.body.appendChild(link)
+                link.click()
+                link.remove()
+                window.URL.revokeObjectURL(url)
+                setApiMessage('Venues exported successfully')
+                setTimeout(() => setApiMessage(null), 3000)
+            })
+            .catch(e => {
+                console.error('Export error:', e)
+                setApiMessage('Failed to export venues')
+                setTimeout(() => setApiMessage(null), 3000)
+            })
+    }
+
     const [filterCountry, setFilterCountry] = useState('')
     const [filterState, setFilterState] = useState('')
     const [filterLivebarn, setFilterLivebarn] = useState('')
@@ -303,6 +329,13 @@ export default function KmasterVenues() {
                         className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-500"
                     >
                         + Add Venue
+                    </button>
+                    <button
+                        onClick={handleExport}
+                        className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-500 disabled:opacity-50"
+                        disabled={isBusy}
+                    >
+                        Export JSON
                     </button>
                 </div>
             </div>
