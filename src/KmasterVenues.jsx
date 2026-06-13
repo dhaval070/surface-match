@@ -5,6 +5,19 @@ import KmasterVenueDialog from './KmasterVenueDialog.jsx'
 import VenueDetailDialog from './VenueDetailDialog.jsx'
 import { Field, Label, Select } from '@headlessui/react'
 
+function useDebounce(value, delay) {
+    const [debouncedValue, setDebouncedValue] = useState(value);
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedValue(value);
+        }, delay);
+        return () => {
+            clearTimeout(handler);
+        };
+    }, [value, delay]);
+    return debouncedValue;
+}
+
 const apiurl = import.meta.env.VITE_API_URL
 
 const US_STATES = [
@@ -43,6 +56,7 @@ export default function KmasterVenues() {
         if (filterCountry) params.append('country', filterCountry)
         if (filterState) params.append('state', filterState)
         if (filterLivebarn !== '') params.append('livebarn', filterLivebarn)
+        if (filterName) params.append('name', filterName)
         api.get(`${apiurl}/kmaster-venues?${params.toString()}`, { responseType: 'blob' })
             .then(resp => {
                 const url = window.URL.createObjectURL(new Blob([resp.data]))
@@ -66,6 +80,12 @@ export default function KmasterVenues() {
     const [filterCountry, setFilterCountry] = useState('')
     const [filterState, setFilterState] = useState('')
     const [filterLivebarn, setFilterLivebarn] = useState('')
+    const [filterName, setFilterName] = useState('')
+    const debouncedFilterName = useDebounce(filterName, 500)
+
+    useEffect(() => {
+        setPage(1)
+    }, [debouncedFilterName, filterCountry, filterState, filterLivebarn])
 
     const auth = useAuth()
     const api = auth.api
@@ -76,6 +96,7 @@ export default function KmasterVenues() {
         if (filterCountry) params.append('country', filterCountry)
         if (filterState) params.append('state', filterState)
         if (filterLivebarn !== '') params.append('livebarn', filterLivebarn)
+        if (debouncedFilterName) params.append('name', debouncedFilterName)
         api.get(`${apiurl}/kmaster-venues?${params.toString()}`).then((resp) => {
             setVenues(resp.data.data || [])
             setTotal(resp.data.total || 0)
@@ -87,7 +108,7 @@ export default function KmasterVenues() {
 
     useEffect(() => {
         fetchVenues(page, pageSize)
-    }, [api, page, pageSize, filterCountry, filterState, filterLivebarn])
+    }, [api, page, pageSize, filterCountry, filterState, filterLivebarn, debouncedFilterName])
 
     const totalPages = Math.ceil(total / pageSize)
 
@@ -260,83 +281,110 @@ export default function KmasterVenues() {
 
             <h1 className="text-xl font-bold text-left mb-4">KMaster Venues</h1>
 
-            <div className="mb-4 flex justify-between items-center p-4 bg-gray-50 rounded-lg">
-                <div className="flex items-center gap-4">
-                    <Field className="flex items-center space-x-2">
-                        <Label className="text-sm font-medium whitespace-nowrap">Country</Label>
-                        <Select
-                            value={filterCountry}
-                            onChange={e => { setFilterCountry(e.target.value); setFilterState('') }}
-                            className="rounded border border-gray-300 px-3 py-2 text-sm"
-                        >
-                            <option value="">All</option>
-                            <option value="USA">USA</option>
-                            <option value="CA">CA</option>
-                        </Select>
-                    </Field>
+            <div className="mb-4 p-4 bg-gray-50 rounded-lg">
+                <div className="flex justify-between items-center gap-4">
+                    <div className="flex items-center gap-4">
+                        <input
+                            type="text"
+                            value={filterName}
+                            onChange={e => setFilterName(e.target.value)}
+                            className="px-2 py-1 border border-gray-300 rounded-md text-sm"
+                            placeholder="Filter by name..."
+                        />
 
-                    <Field className="flex items-center space-x-2">
-                        <Label className="text-sm font-medium whitespace-nowrap">State/Province</Label>
-                        <Select
-                            value={filterState}
-                            onChange={e => setFilterState(e.target.value)}
-                            className="rounded border border-gray-300 px-3 py-2 text-sm"
-                        >
-                            <option value="">All</option>
-                            {filterCountry === 'USA' && US_STATES.map(s => (
-                                <option key={s} value={s}>{s}</option>
-                            ))}
-                            {filterCountry === 'CA' && CA_PROVINCES.map(s => (
-                                <option key={s} value={s}>{s}</option>
-                            ))}
-                        </Select>
-                    </Field>
+                        <Field className="flex items-center space-x-2">
+                            <Label className="text-sm font-medium whitespace-nowrap">Country</Label>
+                            <Select
+                                value={filterCountry}
+                                onChange={e => { setFilterCountry(e.target.value); setFilterState('') }}
+                                className="rounded border border-gray-300 px-3 py-2 text-sm"
+                            >
+                                <option value="">All</option>
+                                <option value="USA">USA</option>
+                                <option value="CA">CA</option>
+                            </Select>
+                        </Field>
 
-                    <Field className="flex items-center space-x-2">
-                        <Label className="text-sm font-medium whitespace-nowrap">LiveBarn</Label>
-                        <Select
-                            value={filterLivebarn}
-                            onChange={e => setFilterLivebarn(e.target.value)}
-                            className="rounded border border-gray-300 px-3 py-2 text-sm"
-                        >
-                            <option value="">All</option>
-                            <option value="true">Matched</option>
-                            <option value="false">Not Matched</option>
-                        </Select>
-                    </Field>
-                </div>
-                <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2">
-                        <label htmlFor="pageSize" className="text-sm font-medium">Per Page:</label>
-                        <select
-                            id="pageSize"
-                            value={pageSize}
-                            onChange={e => {
-                                setPageSize(Number(e.target.value))
+                        <Field className="flex items-center space-x-2">
+                            <Label className="text-sm font-medium whitespace-nowrap">State/Province</Label>
+                            <Select
+                                value={filterState}
+                                onChange={e => setFilterState(e.target.value)}
+                                className="rounded border border-gray-300 px-3 py-2 text-sm"
+                            >
+                                <option value="">All</option>
+                                {filterCountry === 'USA' && US_STATES.map(s => (
+                                    <option key={s} value={s}>{s}</option>
+                                ))}
+                                {filterCountry === 'CA' && CA_PROVINCES.map(s => (
+                                    <option key={s} value={s}>{s}</option>
+                                ))}
+                            </Select>
+                        </Field>
+
+                        <Field className="flex items-center space-x-2">
+                            <Label className="text-sm font-medium whitespace-nowrap">LiveBarn</Label>
+                            <Select
+                                value={filterLivebarn}
+                                onChange={e => setFilterLivebarn(e.target.value)}
+                                className="rounded border border-gray-300 px-3 py-2 text-sm"
+                            >
+                                <option value="">All</option>
+                                <option value="true">Matched</option>
+                                <option value="false">Not Matched</option>
+                            </Select>
+                        </Field>
+
+                        <button
+                            onClick={() => {
+                                setFilterCountry('')
+                                setFilterState('')
+                                setFilterLivebarn('')
+                                setFilterName('')
                                 setPage(1)
                             }}
-                            className="px-2 py-1 border border-gray-300 rounded-md bg-white"
+                            className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md disabled:opacity-50 text-sm"
+                            disabled={isBusy || (filterCountry === '' && filterState === '' && filterLivebarn === '' && filterName === '')}
+                        >
+                            Reset Filters
+                        </button>
+                    </div>
+                    <div className="flex items-center gap-4">
+                        <button
+                            onClick={openCreate}
+                            className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-500"
+                        >
+                            + Add Venue
+                        </button>
+                        <button
+                            onClick={handleExport}
+                            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-500 disabled:opacity-50"
                             disabled={isBusy}
                         >
-                            <option value={10}>10</option>
-                            <option value={25}>25</option>
-                            <option value={50}>50</option>
-                            <option value={100}>100</option>
-                        </select>
+                            Export JSON
+                        </button>
                     </div>
-                    <button
-                        onClick={openCreate}
-                        className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-500"
-                    >
-                        + Add Venue
-                    </button>
-                    <button
-                        onClick={handleExport}
-                        className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-500 disabled:opacity-50"
+                </div>
+            </div>
+
+            <div className="flex justify-end items-center mb-3">
+                <div className="flex items-center gap-2">
+                    <label htmlFor="pageSize" className="text-sm font-medium">Per Page:</label>
+                    <select
+                        id="pageSize"
+                        value={pageSize}
+                        onChange={e => {
+                            setPageSize(Number(e.target.value))
+                            setPage(1)
+                        }}
+                        className="px-2 py-1 border border-gray-300 rounded-md bg-white"
                         disabled={isBusy}
                     >
-                        Export JSON
-                    </button>
+                        <option value={10}>10</option>
+                        <option value={25}>25</option>
+                        <option value={50}>50</option>
+                        <option value={100}>100</option>
+                    </select>
                 </div>
             </div>
 
