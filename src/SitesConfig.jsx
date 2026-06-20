@@ -13,6 +13,10 @@ export default function SitesConfig() {
     const [editingConfig, setEditingConfig] = useState(null)
     const [parserTypeFilter, setParserTypeFilter] = useState('')
     const [parserTypes, setParserTypes] = useState([])
+    const [isImportDialogOpen, setIsImportDialogOpen] = useState(false)
+    const [seasons, setSeasons] = useState([])
+    const [selectedSeasonIds, setSelectedSeasonIds] = useState(new Set())
+    const [isImporting, setIsImporting] = useState(false)
     const [formData, setFormData] = useState({
         site_name: '',
         display_name: '',
@@ -52,6 +56,33 @@ export default function SitesConfig() {
         loadSitesConfigs()
         loadParserTypes()
     }, [api, loadSitesConfigs, loadParserTypes])
+
+    const openImportDialog = () => {
+        setIsImportDialogOpen(true)
+        setIsImporting(true)
+        setSeasons([])
+        setSelectedSeasonIds(new Set())
+        api.get(apiurl + "/gamesheet-seasons?exclude_existing=true").then((resp) => {
+            setSeasons(resp.data || [])
+        }).catch(e => {
+            console.error(e)
+            alert(e.response?.data?.error || 'Failed to load seasons')
+        }).finally(() => setIsImporting(false))
+    }
+
+    const handleImport = () => {
+        const selectedSeasons = seasons.filter(s => selectedSeasonIds.has(s.id))
+        if (selectedSeasons.length === 0) return
+
+        setIsImporting(true)
+        api.post(apiurl + "/gamesheet-seasons/import", selectedSeasons).then(() => {
+            setIsImportDialogOpen(false)
+            loadSitesConfigs()
+        }).catch(e => {
+            console.error(e)
+            alert(e.response?.data?.error || 'Import failed')
+        }).finally(() => setIsImporting(false))
+    }
 
     const openCreateDialog = () => {
         setEditingConfig(null)
@@ -309,6 +340,78 @@ export default function SitesConfig() {
                 </div>
             </Dialog>
 
+            <Dialog open={isImportDialogOpen} onClose={() => setIsImportDialogOpen(false)} className="relative z-50">
+                <div className="fixed inset-0 flex w-screen items-center justify-center bg-black/30 p-4">
+                    <DialogPanel className="max-w-3xl w-full max-h-[90vh] overflow-auto space-y-4 border bg-white p-6 rounded">
+                        <DialogTitle className="font-bold text-xl">
+                            Import Gamesheet Seasons
+                        </DialogTitle>
+                        <Description className="text-sm text-gray-600">
+                            Select seasons to import as site configurations.
+                        </Description>
+
+                        {seasons.length === 0 && !isImporting && (
+                            <p className="text-gray-500">No seasons available.</p>
+                        )}
+
+                        {isImporting && seasons.length === 0 && (
+                            <div className="flex justify-center items-center py-8">
+                                <div className="fas fa-circle-notch fa-spin fa-3x text-blue-600"></div>
+                            </div>
+                        )}
+
+                        {seasons.length > 0 && (
+                            <div className="space-y-2 max-h-96 overflow-y-auto border rounded p-2">
+                                {seasons.map(season => (
+                                    <label key={season.id} className="flex items-start gap-3 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedSeasonIds.has(season.id)}
+                                            onChange={(e) => {
+                                                const next = new Set(selectedSeasonIds)
+                                                if (e.target.checked) {
+                                                    next.add(season.id)
+                                                } else {
+                                                    next.delete(season.id)
+                                                }
+                                                setSelectedSeasonIds(next)
+                                            }}
+                                            className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                        />
+                                        <div className="text-sm">
+                                            <div className="font-medium">#{season.id} - {season.title}</div>
+                                            <div className="text-gray-500">
+                                                {season.leagueId && <span>League ID: {season.leagueId} · </span>}
+                                                {season.start && season.end
+                                                    ? `${season.start} to ${season.end}`
+                                                    : season.start || season.end || ''}
+                                                {season.age_category && <span> · {season.age_category}</span>}
+                                                {season.game_type && <span> · {season.game_type}</span>}
+                                                {season.state_province && <span> · {season.state_province}</span>}
+                                                {season.country && <span> · {season.country}</span>}
+                                            </div>
+                                        </div>
+                                    </label>
+                                ))}
+                            </div>
+                        )}
+
+                        <div className="flex gap-4 pt-4">
+                            <Button
+                                className="rounded bg-blue-600 py-2 px-4 text-sm text-white data-[hover]:bg-blue-500 data-[active]:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                onClick={handleImport}
+                                disabled={selectedSeasonIds.size === 0 || isImporting}
+                            >
+                                {isImporting ? 'Importing...' : 'Import'}
+                            </Button>
+                            <Button type="button" onClick={() => setIsImportDialogOpen(false)} className="rounded bg-gray-600 py-2 px-4 text-sm text-white data-[hover]:bg-gray-500 data-[active]:bg-gray-700">
+                                Cancel
+                            </Button>
+                        </div>
+                    </DialogPanel>
+                </div>
+            </Dialog>
+
             <h1 className="text-xl font-bold text-left mb-4">Sites Configuration</h1>
 
             <div className="mb-4 flex justify-between items-center">
@@ -325,9 +428,14 @@ export default function SitesConfig() {
                         ))}
                     </Select>
                 </Field>
-                <Button className="rounded bg-emerald-600 py-2 px-4 text-sm text-white data-[hover]:bg-emerald-500 data-[active]:bg-emerald-700" onClick={openCreateDialog}>
-                    Add New Site
-                </Button>
+                <div className="flex gap-2">
+                    <Button className="rounded bg-blue-600 py-2 px-4 text-sm text-white data-[hover]:bg-blue-500 data-[active]:bg-blue-700" onClick={openImportDialog}>
+                        Import Gamesheet
+                    </Button>
+                    <Button className="rounded bg-emerald-600 py-2 px-4 text-sm text-white data-[hover]:bg-emerald-500 data-[active]:bg-emerald-700" onClick={openCreateDialog}>
+                        Add New Site
+                    </Button>
+                </div>
             </div>
 
             <Field>
