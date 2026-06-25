@@ -20,7 +20,7 @@ const AuthProvider = ({ children }) => {
         console.error("caught", err)
         if (err.status == 401) {
             setUser(null)
-            // navigate("/login")
+            navigate("/login")
         }
         throw err
     })

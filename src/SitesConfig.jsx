@@ -234,7 +234,11 @@ export default function SitesConfig() {
                 <td className="text-left px-2">{config.parser_type}</td>
                 <td className="text-left px-2">{config.enabled ? 'Yes' : <span className="text-red-600">No</span>}</td>
                 <td className="text-left px-2">{config.last_scraped_at || '-'}</td>
-                <td className="text-left px-2">{config.games_scraped || '-'}</td>
+                <td className="text-left px-2">
+                    <Link to={`/events?site=${encodeURIComponent(config.site_name)}`} className="text-blue-600 hover:text-blue-800 hover:underline">
+                        {config.games_scraped || '-'}
+                    </Link>
+                </td>
                 <td className="text-left px-2">{config.games_imported || '-'}</td>
                 <td className="text-left px-2">
                     <div className="flex flex-col gap-1">

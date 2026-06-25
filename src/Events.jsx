@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import './App.css'
 import { Field, Label, Select, Button } from '@headlessui/react'
 import { useAuth } from './AuthProvider.jsx'
+import { useSearchParams } from 'react-router-dom'
 import SurfaceDialog from './surface-dialog.jsx'
 
 const apiurl = import.meta.env.VITE_API_URL
@@ -25,7 +26,8 @@ export default function Events() {
     const [currentPage, setCurrentPage] = useState(1)
     const [pagination, setPagination] = useState(null)
     const [pageSize, setPageSize] = useState(10)
-    const [site, setSite] = useState("")
+    const [searchParams] = useSearchParams()
+    const [site, setSite] = useState(searchParams.get('site') || "")
     const [allSites, setAllSites] = useState([])
     const [startDate, setStartDate] = useState("")
     const [endDate, setEndDate] = useState("")
