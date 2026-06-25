@@ -49,10 +49,12 @@ export default function KmasterVenues() {
     const [detailBusy, setDetailBusy] = useState(false)
     const [detailOpen, setDetailOpen] = useState(false)
     const [detailTitle, setDetailTitle] = useState('')
+    const [exportingFormat, setExportingFormat] = useState('')
 
-    const handleExport = () => {
+    const handleExport = (fmt = 'json') => {
+        setExportingFormat(fmt)
         const params = new URLSearchParams()
-        params.append('export', 'json')
+        params.append('export', fmt)
         if (filterCountry) params.append('country', filterCountry)
         if (filterState) params.append('state', filterState)
         if (filterLivebarn !== '') params.append('livebarn', filterLivebarn)
@@ -62,7 +64,7 @@ export default function KmasterVenues() {
                 const url = window.URL.createObjectURL(new Blob([resp.data]))
                 const link = document.createElement('a')
                 link.href = url
-                link.setAttribute('download', `kmaster-venues-${new Date().toISOString().slice(0, 10)}.json`)
+                link.setAttribute('download', `kmaster-venues-${new Date().toISOString().slice(0, 10)}.${fmt}`)
                 document.body.appendChild(link)
                 link.click()
                 link.remove()
@@ -75,6 +77,7 @@ export default function KmasterVenues() {
                 setApiMessage('Failed to export venues')
                 setTimeout(() => setApiMessage(null), 3000)
             })
+            .finally(() => setExportingFormat(''))
     }
 
     const [filterCountry, setFilterCountry] = useState('')
@@ -349,21 +352,30 @@ export default function KmasterVenues() {
                             Reset Filters
                         </button>
                     </div>
-                    <div className="flex items-center gap-4">
-                        <button
-                            onClick={openCreate}
-                            className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-500"
-                        >
-                            + Add Venue
-                        </button>
-                        <button
-                            onClick={handleExport}
-                            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-500 disabled:opacity-50"
-                            disabled={isBusy}
-                        >
-                            Export JSON
-                        </button>
-                    </div>
+                </div>
+                <div className="flex justify-end items-center gap-4 mt-3">
+                    <button
+                        onClick={openCreate}
+                        className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-500"
+                    >
+                        + Add Venue
+                    </button>
+                    <button
+                        onClick={() => handleExport('json')}
+                        className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-500 disabled:opacity-50 inline-flex items-center gap-2"
+                        disabled={isBusy || !!exportingFormat}
+                    >
+                        {exportingFormat === 'json' && <i className="fas fa-spinner fa-spin"></i>}
+                        Export JSON
+                    </button>
+                    <button
+                        onClick={() => handleExport('csv')}
+                        className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-500 disabled:opacity-50 inline-flex items-center gap-2"
+                        disabled={isBusy || !!exportingFormat}
+                    >
+                        {exportingFormat === 'csv' && <i className="fas fa-spinner fa-spin"></i>}
+                        Export CSV
+                    </button>
                 </div>
             </div>
 
