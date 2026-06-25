@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import './App.css'
 import { useAuth } from './AuthProvider.jsx'
+import { Link } from 'react-router-dom'
 import { Field, Label, Input, Button, Dialog, DialogPanel, DialogTitle, Description, Textarea, Select } from '@headlessui/react'
 
 const apiurl = import.meta.env.VITE_API_URL
@@ -13,6 +14,11 @@ export default function SitesConfig() {
     const [editingConfig, setEditingConfig] = useState(null)
     const [parserTypeFilter, setParserTypeFilter] = useState('')
     const [parserTypes, setParserTypes] = useState([])
+    const [searchText, setSearchText] = useState('')
+    const [debouncedSearch, setDebouncedSearch] = useState('')
+    const [enabledFilter, setEnabledFilter] = useState('')
+    const [sortColumn, setSortColumn] = useState('')
+    const [sortOrder, setSortOrder] = useState('asc')
     const [isImportDialogOpen, setIsImportDialogOpen] = useState(false)
     const [seasons, setSeasons] = useState([])
     const [selectedSeasonIds, setSelectedSeasonIds] = useState(new Set())
@@ -39,12 +45,25 @@ export default function SitesConfig() {
         }
     }, [parserTypeFilter, sitesConfigs])
 
+    useEffect(function() {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchText)
+        }, 300)
+        return () => clearTimeout(timer)
+    }, [searchText])
+
     const loadSitesConfigs = useCallback(() => {
         setBusy(true)
-        api.get(apiurl + "/sites-config").then((resp) => {
+        const params = new URLSearchParams()
+        if (debouncedSearch) params.set('search', debouncedSearch)
+        if (enabledFilter) params.set('enabled', enabledFilter)
+        if (sortColumn) params.set('sort', sortColumn)
+        if (sortOrder) params.set('order', sortOrder)
+        const qs = params.toString()
+        api.get(apiurl + "/sites-config" + (qs ? '?' + qs : '')).then((resp) => {
             setSitesConfigs(resp.data || [])
         }).catch(e => console.error(e)).finally(() => setBusy(false))
-    }, [api, setBusy, setSitesConfigs])
+    }, [api, setBusy, setSitesConfigs, debouncedSearch, enabledFilter, sortColumn, sortOrder])
 
     const loadParserTypes = useCallback(() => {
         api.get(apiurl + "/parser-types").then((resp) => {
@@ -186,12 +205,30 @@ export default function SitesConfig() {
         setFormData({ ...formData, [field]: value })
     }
 
+    const handleSort = (column) => {
+        if (sortColumn === column) {
+            setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')
+        } else {
+            setSortColumn(column)
+            setSortOrder('asc')
+        }
+    }
+
+    const sortIndicator = (column) => {
+        if (sortColumn !== column) return ''
+        return sortOrder === 'asc' ? ' ▲' : ' ▼'
+    }
+
     let rows = []
     if (filteredConfigs.length > 0) {
         rows = filteredConfigs.map(config => (
             <tr key={config.id} className="even:bg-gray-50 odd:bg-gray-200">
                 <td className="text-left px-2">{config.id}</td>
-                <td className="text-left px-2">{config.site_name}</td>
+                <td className="text-left px-2">
+                    <Link to={`/?site=${encodeURIComponent(config.site_name)}`} className="text-blue-600 hover:text-blue-800 hover:underline">
+                        {config.site_name}
+                    </Link>
+                </td>
                 <td className="text-left px-2">{config.display_name || '-'}</td>
                 <td className="text-left px-2 max-w-xs truncate" title={config.base_url}>{config.base_url}</td>
                 <td className="text-left px-2">{config.parser_type}</td>
@@ -414,7 +451,29 @@ export default function SitesConfig() {
 
             <h1 className="text-xl font-bold text-left mb-4">Sites Configuration</h1>
 
-            <div className="mb-4 flex justify-between items-center">
+            <div className="mb-4 flex flex-wrap gap-3 items-center">
+                <Field className="flex items-center space-x-2">
+                    <Label className="text-sm font-medium whitespace-nowrap">Search</Label>
+                    <Input
+                        type="text"
+                        value={searchText}
+                        onChange={(e) => setSearchText(e.target.value)}
+                        placeholder="Search by name..."
+                        className="rounded border border-gray-300 px-3 py-2 text-sm w-48"
+                    />
+                </Field>
+                <Field className="flex items-center space-x-2">
+                    <Label className="text-sm font-medium">Enabled</Label>
+                    <Select
+                        value={enabledFilter}
+                        onChange={(e) => setEnabledFilter(e.target.value)}
+                        className="rounded border border-gray-300 px-3 py-2 text-sm"
+                    >
+                        <option value="">All</option>
+                        <option value="true">Enabled</option>
+                        <option value="false">Disabled</option>
+                    </Select>
+                </Field>
                 <Field className="flex items-center space-x-2">
                     <Label className="text-sm font-medium">Parser Type</Label>
                     <Select
@@ -428,7 +487,10 @@ export default function SitesConfig() {
                         ))}
                     </Select>
                 </Field>
-                <div className="flex gap-2">
+                <div className="flex gap-2 ml-auto">
+                    <Button className="rounded bg-gray-500 py-2 px-4 text-sm text-white data-[hover]:bg-gray-400 data-[active]:bg-gray-600" onClick={() => { setSearchText(''); setEnabledFilter(''); setSortColumn(''); setSortOrder('asc'); setParserTypeFilter(''); }}>
+                        Reset Filters
+                    </Button>
                     <Button className="rounded bg-blue-600 py-2 px-4 text-sm text-white data-[hover]:bg-blue-500 data-[active]:bg-blue-700" onClick={openImportDialog}>
                         Import Gamesheet
                     </Button>
@@ -443,14 +505,24 @@ export default function SitesConfig() {
                     <thead className="sticky top-0">
                         <tr className="bg-slate-300">
                             <th className="px-2">ID</th>
-                            <th className="px-2">Site Name</th>
-                            <th className="px-2">Display Name</th>
+                            <th className="px-2 cursor-pointer hover:bg-slate-400 select-none" onClick={() => handleSort('site_name')}>
+                                Site Name{sortIndicator('site_name')}
+                            </th>
+                            <th className="px-2 cursor-pointer hover:bg-slate-400 select-none" onClick={() => handleSort('display_name')}>
+                                Display Name{sortIndicator('display_name')}
+                            </th>
                             <th className="px-2">Base URL</th>
                             <th className="px-2">Parser Type</th>
                             <th className="px-2">Enabled</th>
-                            <th className="px-2">Last Scraped</th>
-                            <th className="px-2">Games scraped</th>
-                            <th className="px-2">Games imported</th>
+                            <th className="px-2 cursor-pointer hover:bg-slate-400 select-none" onClick={() => handleSort('last_scraped_at')}>
+                                Last Scraped{sortIndicator('last_scraped_at')}
+                            </th>
+                            <th className="px-2 cursor-pointer hover:bg-slate-400 select-none" onClick={() => handleSort('games_scraped')}>
+                                Games scraped{sortIndicator('games_scraped')}
+                            </th>
+                            <th className="px-2 cursor-pointer hover:bg-slate-400 select-none" onClick={() => handleSort('games_imported')}>
+                                Games imported{sortIndicator('games_imported')}
+                            </th>
                             <th className="px-2">Actions</th>
                         </tr>
                     </thead>

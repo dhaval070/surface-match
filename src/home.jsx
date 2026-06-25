@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import './App.css'
 import { Field, Label, Select, Button, Description, Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
+import { useSearchParams } from 'react-router-dom'
 import { useAuth } from './AuthProvider.jsx'
 import SurfaceDialog from './surface-dialog.jsx'
 
@@ -37,6 +38,7 @@ export default function Home() {
     const [errorDetails, setErrorDetails] = useState('')
     const auth = useAuth()
     const api = auth.api
+    const [searchParams] = useSearchParams()
     const dropdownRef = useRef(null)
     const scrapeStatusIntervalRef = useRef(null)
     const prevScrapeStatusRef = useRef(null)
@@ -150,6 +152,13 @@ export default function Home() {
         }).finally(() => setBusy(false))
     }, [api])
 
+
+    useEffect(() => {
+        const siteParam = searchParams.get('site')
+        if (siteParam) {
+            setSite(siteParam)
+        }
+    }, [])
 
     useEffect(function() {
         if (!api || !showLocationsModal) return
@@ -277,6 +286,7 @@ export default function Home() {
 
     const handleClearLocationFilter = () => {
         setLocationFilter('')
+        setSite('')
         setSiteLocCurrentPage(1)
     }
 
@@ -442,7 +452,7 @@ export default function Home() {
             <Field >
                 <div className="flex justify-start items-center">
                     <Label className="text-sm/6 font-medium">Site</Label>&nbsp;&nbsp;
-                    <Select onChange={(e) => setSite(e.currentTarget.value)} className="rounded border-solid outline outline-gray-400 outline-2 w-64" >
+                    <Select onChange={(e) => setSite(e.currentTarget.value)} value={site} className="rounded border-solid outline outline-gray-400 outline-2 w-64" >
                         <option value="">All</option>
                         {options}
                     </Select>
@@ -505,7 +515,7 @@ export default function Home() {
                         <button
                             onClick={handleClearLocationFilter}
                             className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md disabled:opacity-50"
-                            disabled={isBusy || locationFilter === ''}
+                            disabled={isBusy || (locationFilter === '' && !site)}
                         >
                             Clear Filter
                         </button>
