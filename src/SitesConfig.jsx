@@ -82,7 +82,7 @@ export default function SitesConfig() {
         setIsImporting(true)
         setSeasons([])
         setSelectedSeasonIds(new Set())
-        api.get(apiurl + "/gamesheet-seasons?exclude_existing=true").then((resp) => {
+        api.get(apiurl + "/gamesheet-seasons?exclude_existing=true&source=csv").then((resp) => {
             setSeasons(resp.data || [])
         }).catch(e => {
             console.error(e)
@@ -232,10 +232,10 @@ export default function SitesConfig() {
                     {config.readiness_status === 2
                         ? <span className="fas fa-check-circle text-emerald-600 mr-1" title="Ready" />
                         : config.readiness_status === 1
-                        ? <span className="fas fa-spinner fa-spin text-amber-500 mr-1" title="In Progress" />
-                        : config.readiness_status === 0
-                        ? <span className="fas fa-hourglass text-gray-400 mr-1" title="Pending" />
-                        : null}
+                            ? <span className="fas fa-spinner fa-spin text-amber-500 mr-1" title="In Progress" />
+                            : config.readiness_status === 0
+                                ? <span className="fas fa-hourglass text-gray-400 mr-1" title="Pending" />
+                                : null}
                     <Link to={`/?site=${encodeURIComponent(config.site_name)}`} className="text-blue-600 hover:text-blue-800 hover:underline">
                         {config.site_name}
                     </Link>
