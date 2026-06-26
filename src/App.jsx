@@ -21,8 +21,8 @@ export default function App() {
     return <Router>
         <AuthProvider>
             <Routes>
+                <Route path="/login" element={<Login />} />
                 <Route element={<Layout />} >
-                    <Route path="/login" element={<Login />} />
                     <Route element={<PrivateRoute />}>
                         <Route path="/" element={<Home />} />
                         <Route path="/mappings" element={<Mapping />} />
