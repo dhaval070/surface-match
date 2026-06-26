@@ -36,6 +36,7 @@ export default function Home() {
     const [confirmScrapeOpen, setConfirmScrapeOpen] = useState(false)
     const [errorModalOpen, setErrorModalOpen] = useState(false)
     const [errorDetails, setErrorDetails] = useState('')
+    const [readinessUpdateMsg, setReadinessUpdateMsg] = useState('')
     const auth = useAuth()
     const api = auth.api
     const [searchParams] = useSearchParams()
@@ -266,6 +267,21 @@ export default function Home() {
             .finally(() => setScrapeTriggerLoading(false))
     }, [site, api])
 
+    const handleUpdateReadiness = (configId, newValue) => {
+        api.put(apiurl + "/sites-config/" + configId + "/readiness", { readiness_status: newValue })
+            .then(() => {
+                setAllSites(prev => prev.map(s =>
+                    s.id === configId ? { ...s, readiness_status: newValue } : s
+                ))
+                setReadinessUpdateMsg('Readiness status updated')
+                setTimeout(() => setReadinessUpdateMsg(''), 3000)
+            })
+            .catch(e => {
+                console.error('Failed to update readiness status:', e)
+                alert('Failed to update readiness status: ' + (e.response?.data?.error || e.message))
+            })
+    }
+
     const handlePrevPage = () => setCurrentPage(p => Math.max(1, p - 1))
     const handleNextPage = () => setCurrentPage(p => p + 1)
     const handleFirstPage = () => setCurrentPage(1)
@@ -302,6 +318,7 @@ export default function Home() {
     }
 
     const isScrapingRunning = siteScrapingStatus?.status === 'running'
+    const siteConfig = allSites.find(s => s.site_name === site)
     let rows = []
 
     if (siteLoc.length > 0) {
@@ -489,6 +506,24 @@ export default function Home() {
                                         >
                                             View Errors
                                         </Button>
+                                    )}
+                                </>
+                            )}
+                            {siteConfig && (
+                                <>
+                                    <span className="text-gray-300 mx-1">|</span>
+                                    <span className="text-xs text-gray-600">Readiness:</span>
+                                    <select
+                                        value={siteConfig.readiness_status}
+                                        onChange={(e) => handleUpdateReadiness(siteConfig.id, parseInt(e.target.value))}
+                                        className="text-xs border border-gray-300 rounded px-1 py-0.5"
+                                    >
+                                        <option value={0}>Pending</option>
+                                        <option value={1}>In Progress</option>
+                                        <option value={2}>Ready</option>
+                                    </select>
+                                    {readinessUpdateMsg && (
+                                        <span className="text-xs text-emerald-600">{readinessUpdateMsg}</span>
                                     )}
                                 </>
                             )}

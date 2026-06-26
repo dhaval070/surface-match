@@ -32,7 +32,8 @@ export default function SitesConfig() {
         parser_config: '{}',
         enabled: true,
         scrape_frequency_hours: 24,
-        notes: ''
+        notes: '',
+        readiness_status: 0
     })
     const auth = useAuth()
     const api = auth.api
@@ -114,7 +115,8 @@ export default function SitesConfig() {
             parser_config: '{}',
             enabled: true,
             scrape_frequency_hours: 24,
-            notes: ''
+            notes: '',
+            readiness_status: 0
         })
         setIsOpen(true)
     }
@@ -130,7 +132,8 @@ export default function SitesConfig() {
             parser_config: JSON.stringify(config.parser_config || {}, null, 2),
             enabled: config.enabled !== null ? config.enabled : true,
             scrape_frequency_hours: config.scrape_frequency_hours || 24,
-            notes: config.notes || ''
+            notes: config.notes || '',
+            readiness_status: config.readiness_status ?? null
         })
         setIsOpen(true)
     }
@@ -156,6 +159,7 @@ export default function SitesConfig() {
             parser_type: formData.parser_type,
             parser_config: parsedConfig,
             enabled: formData.enabled,
+            readiness_status: parseInt(formData.readiness_status),
             scrape_frequency_hours: formData.scrape_frequency_hours ? parseInt(formData.scrape_frequency_hours) : null,
             notes: formData.notes || null
         }
@@ -225,6 +229,13 @@ export default function SitesConfig() {
             <tr key={config.id} className="even:bg-gray-50 odd:bg-gray-200">
                 <td className="text-left px-2">{config.id}</td>
                 <td className="text-left px-2">
+                    {config.readiness_status === 2
+                        ? <span className="fas fa-check-circle text-emerald-600 mr-1" title="Ready" />
+                        : config.readiness_status === 1
+                        ? <span className="fas fa-spinner fa-spin text-amber-500 mr-1" title="In Progress" />
+                        : config.readiness_status === 0
+                        ? <span className="fas fa-hourglass text-gray-400 mr-1" title="Pending" />
+                        : null}
                     <Link to={`/?site=${encodeURIComponent(config.site_name)}`} className="text-blue-600 hover:text-blue-800 hover:underline">
                         {config.site_name}
                     </Link>
@@ -366,6 +377,19 @@ export default function SitesConfig() {
                                     className="w-full rounded border border-gray-300 px-3 py-2"
                                     rows={3}
                                 />
+                            </Field>
+
+                            <Field>
+                                <Label className="text-sm font-medium">Readiness Status</Label>
+                                <Select
+                                    value={formData.readiness_status}
+                                    onChange={(e) => handleChange('readiness_status', parseInt(e.target.value))}
+                                    className="w-full rounded border border-gray-300 px-3 py-2"
+                                >
+                                    <option value="0">Pending</option>
+                                    <option value="1">In Progress</option>
+                                    <option value="2">Ready</option>
+                                </Select>
                             </Field>
 
                             <div className="flex gap-4 pt-4">
