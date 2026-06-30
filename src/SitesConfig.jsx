@@ -549,7 +549,7 @@ export default function SitesConfig() {
                                 Games scraped{sortIndicator('games_scraped')}
                             </th>
                             <th className="px-2 cursor-pointer hover:bg-slate-400 select-none" onClick={() => handleSort('games_imported')}>
-                                Games imported{sortIndicator('games_imported')}
+                                Games Upcoming{sortIndicator('games_imported')}
                             </th>
                             <th className="px-2">Actions</th>
                         </tr>
