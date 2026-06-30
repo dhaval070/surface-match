@@ -8,8 +8,12 @@ import SurfaceDialog from './surface-dialog.jsx'
 const apiurl = import.meta.env.VITE_API_URL
 
 export default function Home() {
+    const auth = useAuth()
+    const api = auth.api
+    const [searchParams] = useSearchParams()
+    const initialSite = searchParams.get('site') || ''
     const [siteLoc, setSiteLoc] = useState([])
-    const [site, setSite] = useState("")
+    const [site, setSite] = useState(initialSite)
     const [allSites, setAllSites] = useState([])
     const [isOpen, setIsOpen] = useState(false)
     const [currSiteLoc, setCurrSiteLoc] = useState(null)
@@ -37,9 +41,6 @@ export default function Home() {
     const [errorModalOpen, setErrorModalOpen] = useState(false)
     const [errorDetails, setErrorDetails] = useState('')
     const [readinessUpdateMsg, setReadinessUpdateMsg] = useState('')
-    const auth = useAuth()
-    const api = auth.api
-    const [searchParams] = useSearchParams()
     const dropdownRef = useRef(null)
     const scrapeStatusIntervalRef = useRef(null)
     const prevScrapeStatusRef = useRef(null)
@@ -153,13 +154,6 @@ export default function Home() {
         }).finally(() => setBusy(false))
     }, [api])
 
-
-    useEffect(() => {
-        const siteParam = searchParams.get('site')
-        if (siteParam) {
-            setSite(siteParam)
-        }
-    }, [])
 
     useEffect(function() {
         if (!api || !showLocationsModal) return
@@ -302,6 +296,7 @@ export default function Home() {
 
     const handleClearLocationFilter = () => {
         setLocationFilter('')
+        setDebouncedLocationFilter('')
         setSite('')
         setSiteLocCurrentPage(1)
     }
