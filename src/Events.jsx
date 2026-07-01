@@ -151,7 +151,7 @@ export default function Events() {
     if (events.length > 0) {
         console.log("First event object keys:", Object.keys(events[0]))
         rows = events.map((r, index) => (
-            <tr key={r.id || index} className="even:bg-gray-50 odd:bg-gray-200">
+            <tr key={r.id || index} className={`even:bg-gray-50 odd:bg-gray-200${r.surface_status != null && !['Active', 'Initializing', 'No Action'].includes(r.surface_status) ? ' text-yellow-600' : ''}`}>
                 <td className="text-left px-4 py-2">
                     <span>{r.id}</span>
                     {r.event_id && r.event_id !== '' && r.event_id != 0 && (
