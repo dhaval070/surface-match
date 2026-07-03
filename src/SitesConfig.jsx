@@ -237,7 +237,7 @@ export default function SitesConfig() {
                                 ? <span className="fas fa-hourglass text-gray-400 mr-1" title="Pending" />
                                 : null}
                     <Link to={`/?site=${encodeURIComponent(config.site_name)}`} className="text-blue-600 hover:text-blue-800 hover:underline">
-                        {config.site_name}
+                        {config.site_name}{config.league_name ? ` (${config.league_name})` : ''}
                     </Link>
                 </td>
                 <td className="text-left px-2">{config.display_name || '-'}</td>
@@ -287,8 +287,9 @@ export default function SitesConfig() {
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <Field>
                                 <Label className="text-sm font-medium">Site Name *</Label>
-                                <Input
+                                    <Input
                                     required
+                                    readOnly={!!editingConfig}
                                     value={formData.site_name}
                                     onChange={(e) => handleChange('site_name', e.target.value)}
                                     className="w-full rounded border border-gray-300 px-3 py-2"
