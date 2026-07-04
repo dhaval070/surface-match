@@ -233,7 +233,7 @@ export default function MHRLocations() {
                         <span>{r.livebarn_location_id}</span>
                     </div>
                 </td>
-                 <td className="text-left">{r.LiveBarnLocation.name}</td>
+                 <td className="text-left">{r.liveBarnLocation?.name}</td>
                   <td className="text-left">
                       <button 
                           onClick={() => openNotesDialog(r)}
