@@ -53,6 +53,8 @@ export default function Home() {
     const [tagSearch, setTagSearch] = useState('')
     const [tagBusy, setTagBusy] = useState(false)
     const [newTagName, setNewTagName] = useState('')
+    const [confirmDeleteTagId, setConfirmDeleteTagId] = useState(null)
+    const [confirmDeleteTagName, setConfirmDeleteTagName] = useState('')
     const dropdownRef = useRef(null)
     const scrapeStatusIntervalRef = useRef(null)
     const prevScrapeStatusRef = useRef(null)
@@ -300,7 +302,7 @@ export default function Home() {
 
     const fetchAssignedTags = useCallback((siteName, locationName) => {
         if (!siteName || !locationName) return
-        api.get(apiurl + `/site-locations/${encodeURIComponent(siteName)}/${encodeURIComponent(locationName)}/tags`).then((resp) => {
+        api.get(apiurl + "/site-location-tags", { params: { site: siteName, location: locationName } }).then((resp) => {
             const ids = new Set((resp.data || []).map(t => t.id))
             setSelectedTagIds(ids)
             setOriginalTagIds(new Set(ids))
@@ -360,15 +362,31 @@ export default function Home() {
         const toRemove = [...originalTagIds].filter(id => !selectedTagIds.has(id))
         const promises = []
         if (toAdd.length > 0) {
-            promises.push(api.post(apiurl + `/site-locations/${encodeURIComponent(site)}/${encodeURIComponent(location)}/tags`, { tag_ids: toAdd }))
+            promises.push(api.post(apiurl + "/site-location-tags", { tag_ids: toAdd }, { params: { site, location } }))
         }
         toRemove.forEach(id => {
-            promises.push(api.delete(apiurl + `/site-locations/${encodeURIComponent(site)}/${encodeURIComponent(location)}/tags/${id}`))
+            promises.push(api.delete(apiurl + "/site-location-tags", { params: { site, location, tag_id: id } }))
         })
         Promise.all(promises).then(() => {
             setShowTagsModal(false)
             fetchSiteLocations()
         }).catch(e => console.error('Failed to save tags:', e)).finally(() => setTagBusy(false))
+    }
+
+    const handleDeleteTag = () => {
+        if (!confirmDeleteTagId) return
+        setTagBusy(true)
+        api.delete(apiurl + "/tags/" + confirmDeleteTagId).then(() => {
+            setAllTags(prev => prev.filter(t => t.id !== confirmDeleteTagId))
+            setSelectedTagIds(prev => {
+                const next = new Set(prev)
+                next.delete(confirmDeleteTagId)
+                return next
+            })
+            setConfirmDeleteTagId(null)
+            setConfirmDeleteTagName('')
+            fetchSiteLocations()
+        }).catch(e => console.error('Failed to delete tag:', e)).finally(() => setTagBusy(false))
     }
 
     const handleUpdateReadiness = (configId, newValue) => {
@@ -620,7 +638,7 @@ export default function Home() {
                                             return (
                                                 <label
                                                     key={tag.id}
-                                                    className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 cursor-pointer text-sm"
+                                                    className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 cursor-pointer text-sm group"
                                                 >
                                                     <input
                                                         type="checkbox"
@@ -632,13 +650,43 @@ export default function Home() {
                                                         className="inline-block w-3 h-3 rounded-full"
                                                         style={{ backgroundColor: tag.color || '#6b7280' }}
                                                     />
-                                                    <span className={isAssigned ? 'font-semibold' : 'text-gray-700'}>
+                                                    <span className={`flex-1 ${isAssigned ? 'font-semibold' : 'text-gray-700'}`}>
                                                         {tag.name}
                                                     </span>
+                                                    <button
+                                                        onClick={(e) => { e.preventDefault(); setConfirmDeleteTagId(tag.id); setConfirmDeleteTagName(tag.name); }}
+                                                        className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 text-sm px-1 transition-opacity"
+                                                        title="Delete tag"
+                                                    >
+                                                        &times;
+                                                    </button>
                                                 </label>
                                             )
                                         })
                                     )}
+                                </div>
+                            )}
+
+                            {confirmDeleteTagId && (
+                                <div className="rounded-md bg-red-50 border border-red-200 p-4 space-y-3">
+                                    <p className="text-sm text-red-800">
+                                        Delete tag <strong>{confirmDeleteTagName}</strong>? It will be removed from all assigned site-locations.
+                                    </p>
+                                    <div className="flex justify-end gap-3">
+                                        <Button
+                                            className="rounded bg-gray-200 py-1.5 px-3 text-sm text-gray-800 data-[hover]:bg-gray-300"
+                                            onClick={() => { setConfirmDeleteTagId(null); setConfirmDeleteTagName(''); }}
+                                        >
+                                            Cancel
+                                        </Button>
+                                        <Button
+                                            className="rounded bg-red-600 py-1.5 px-3 text-sm text-white data-[hover]:bg-red-500"
+                                            onClick={handleDeleteTag}
+                                            disabled={tagBusy}
+                                        >
+                                            {tagBusy ? 'Deleting...' : 'Delete'}
+                                        </Button>
+                                    </div>
                                 </div>
                             )}
 
