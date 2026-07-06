@@ -725,84 +725,8 @@ export default function SitesConfig() {
 
             <h1 className="text-xl font-bold text-left mb-4">Sites Configuration</h1>
 
-            <div className="mb-4 flex flex-wrap gap-3 items-center">
-                <Field className="flex items-center space-x-2">
-                    <Label className="text-sm font-medium whitespace-nowrap">Search</Label>
-                    <Input
-                        type="text"
-                        value={searchText}
-                        onChange={(e) => setSearchText(e.target.value)}
-                        placeholder="Search by name..."
-                        className="rounded border border-gray-300 px-3 py-2 text-sm w-48"
-                    />
-                </Field>
-                <Field className="flex items-center space-x-2">
-                    <Label className="text-sm font-medium">Enabled</Label>
-                    <Select
-                        value={enabledFilter}
-                        onChange={(e) => setEnabledFilter(e.target.value)}
-                        className="rounded border border-gray-300 px-3 py-2 text-sm"
-                    >
-                        <option value="">All</option>
-                        <option value="true">Enabled</option>
-                        <option value="false">Disabled</option>
-                    </Select>
-                </Field>
-                <Field className="flex items-center space-x-2">
-                    <Label className="text-sm font-medium">Parser Type</Label>
-                    <Select
-                        value={parserTypeFilter}
-                        onChange={(e) => setParserTypeFilter(e.target.value)}
-                        className="rounded border border-gray-300 px-3 py-2 text-sm"
-                    >
-                        <option value="">All</option>
-                        {parserTypes.map(type => (
-                            <option key={type} value={type}>{type}</option>
-                        ))}
-                    </Select>
-                </Field>
-                <div className="relative ml-4">
-                    <input
-                        type="text"
-                        value={tagFilter}
-                        onChange={e => {
-                            setTagFilter(e.target.value)
-                            if (selectedTag) setSelectedTag(null)
-                        }}
-                        onFocus={() => { if (tagSuggestions.length > 0) setShowTagSuggestions(true) }}
-                        onBlur={() => setTimeout(() => setShowTagSuggestions(false), 200)}
-                        className="px-2 py-2 border border-gray-300 rounded-md text-sm w-48"
-                        placeholder={selectedTag ? '' : "Filter by tag..."}
-                        disabled={isBusy}
-                    />
-                    {selectedTag && (
-                        <button
-                            onClick={() => { setSelectedTag(null); setTagFilter(''); }}
-                            className="absolute right-1 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 text-lg leading-none px-1"
-                        >
-                            &times;
-                        </button>
-                    )}
-                    {showTagSuggestions && tagSuggestions.length > 0 && (
-                        <div className="absolute top-full left-0 mt-1 w-64 bg-white border rounded shadow-md z-50 max-h-48 overflow-y-auto">
-                            {tagSuggestions.map(tag => (
-                                <button
-                                    key={tag.id}
-                                    className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
-                                    onMouseDown={() => {
-                                        setSelectedTag(tag)
-                                        setTagFilter(tag.name)
-                                        setShowTagSuggestions(false)
-                                    }}
-                                >
-                                    <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ backgroundColor: tag.color || '#6b7280' }} />
-                                    {tag.name}
-                                </button>
-                            ))}
-                        </div>
-                    )}
-                </div>
-                <div className="flex gap-2 ml-auto">
+            <div className="mb-4">
+                <div className="flex flex-wrap gap-2 mb-2 justify-end">
                     <Button className="rounded bg-gray-500 py-2 px-4 text-sm text-white data-[hover]:bg-gray-400 data-[active]:bg-gray-600" onClick={() => { setSearchText(''); setEnabledFilter(''); setSortColumn(''); setSortOrder('asc'); setParserTypeFilter(''); setTagFilter(''); setSelectedTag(null); }}>
                         Reset Filters
                     </Button>
@@ -812,6 +736,84 @@ export default function SitesConfig() {
                     <Button className="rounded bg-emerald-600 py-2 px-4 text-sm text-white data-[hover]:bg-emerald-500 data-[active]:bg-emerald-700" onClick={openCreateDialog}>
                         Add New Site
                     </Button>
+                </div>
+                <div className="flex flex-wrap gap-3 items-center">
+                    <Field className="flex items-center space-x-2">
+                        <Label className="text-sm font-medium whitespace-nowrap">Search</Label>
+                        <Input
+                            type="text"
+                            value={searchText}
+                            onChange={(e) => setSearchText(e.target.value)}
+                            placeholder="Search by name..."
+                            className="rounded border border-gray-300 px-3 py-2 text-sm w-48"
+                        />
+                    </Field>
+                    <Field className="flex items-center space-x-2">
+                        <Label className="text-sm font-medium">Enabled</Label>
+                        <Select
+                            value={enabledFilter}
+                            onChange={(e) => setEnabledFilter(e.target.value)}
+                            className="rounded border border-gray-300 px-3 py-2 text-sm"
+                        >
+                            <option value="">All</option>
+                            <option value="true">Enabled</option>
+                            <option value="false">Disabled</option>
+                        </Select>
+                    </Field>
+                    <Field className="flex items-center space-x-2">
+                        <Label className="text-sm font-medium">Parser Type</Label>
+                        <Select
+                            value={parserTypeFilter}
+                            onChange={(e) => setParserTypeFilter(e.target.value)}
+                            className="rounded border border-gray-300 px-3 py-2 text-sm"
+                        >
+                            <option value="">All</option>
+                            {parserTypes.map(type => (
+                                <option key={type} value={type}>{type}</option>
+                            ))}
+                        </Select>
+                    </Field>
+                    <div className="relative ml-4">
+                        <input
+                            type="text"
+                            value={tagFilter}
+                            onChange={e => {
+                                setTagFilter(e.target.value)
+                                if (selectedTag) setSelectedTag(null)
+                            }}
+                            onFocus={() => { if (tagSuggestions.length > 0) setShowTagSuggestions(true) }}
+                            onBlur={() => setTimeout(() => setShowTagSuggestions(false), 200)}
+                            className="px-2 py-2 border border-gray-300 rounded-md text-sm w-48"
+                            placeholder={selectedTag ? '' : "Filter by tag..."}
+                            disabled={isBusy}
+                        />
+                        {selectedTag && (
+                            <button
+                                onClick={() => { setSelectedTag(null); setTagFilter(''); }}
+                                className="absolute right-1 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 text-lg leading-none px-1"
+                            >
+                                &times;
+                            </button>
+                        )}
+                        {showTagSuggestions && tagSuggestions.length > 0 && (
+                            <div className="absolute top-full left-0 mt-1 w-64 bg-white border rounded shadow-md z-50 max-h-48 overflow-y-auto">
+                                {tagSuggestions.map(tag => (
+                                    <button
+                                        key={tag.id}
+                                        className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
+                                        onMouseDown={() => {
+                                            setSelectedTag(tag)
+                                            setTagFilter(tag.name)
+                                            setShowTagSuggestions(false)
+                                        }}
+                                    >
+                                        <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ backgroundColor: tag.color || '#6b7280' }} />
+                                        {tag.name}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
 
