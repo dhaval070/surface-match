@@ -402,7 +402,7 @@ export default function KmasterVenues() {
                 </div>
             </div>
 
-            <div className="my-5">
+            <div className="my-5 overflow-x-auto">
                 <table className="table-auto bg-gray-100 w-full">
                     <thead className="sticky top-0">
                         <tr className="bg-slate-300">

@@ -133,8 +133,8 @@ export default function KmasterVenueDialog(props) {
                             }
                         `}</style>
 
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="col-span-2">
+                        <div className="grid grid-cols-3 gap-4">
+                            <div className="col-span-3">
                                 <label className="block text-sm font-medium mb-1">Venue Name *</label>
                                 <input
                                     type="text"
@@ -218,15 +218,6 @@ export default function KmasterVenueDialog(props) {
                                     step="any"
                                 />
                             </div>
-                            <div className="col-span-2">
-                                <label className="block text-sm font-medium mb-1">Rink Address</label>
-                                <input
-                                    type="text"
-                                    value={form.rink_address}
-                                    onChange={e => handleChange('rink_address', e.target.value)}
-                                    className="w-full rounded border border-gray-300 px-3 py-2"
-                                />
-                            </div>
                             <div>
                                 <label className="block text-sm font-medium mb-1">Phone Number</label>
                                 <input
@@ -260,6 +251,15 @@ export default function KmasterVenueDialog(props) {
                                     type="text"
                                     value={form.streaming_platform}
                                     onChange={e => handleChange('streaming_platform', e.target.value)}
+                                    className="w-full rounded border border-gray-300 px-3 py-2"
+                                />
+                            </div>
+                            <div className="col-span-3">
+                                <label className="block text-sm font-medium mb-1">Rink Address</label>
+                                <input
+                                    type="text"
+                                    value={form.rink_address}
+                                    onChange={e => handleChange('rink_address', e.target.value)}
                                     className="w-full rounded border border-gray-300 px-3 py-2"
                                 />
                             </div>
