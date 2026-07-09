@@ -32,6 +32,8 @@ const emptyForm = {
     surfaces: '',
     livebarn_venue_id: '',
     mhr_venue_id: '',
+    latitude: '',
+    longitude: '',
 }
 
 export default function KmasterVenueDialog(props) {
@@ -60,6 +62,8 @@ export default function KmasterVenueDialog(props) {
                     surfaces: props.venue.surfaces ?? '',
                     livebarn_venue_id: props.venue.livebarn_venue_id ?? '',
                     mhr_venue_id: props.venue.mhr_venue_id ?? '',
+                    latitude: props.venue.latitude ?? '',
+                    longitude: props.venue.longitude ?? '',
                 })
             } else {
                 setForm(emptyForm)
@@ -87,6 +91,8 @@ export default function KmasterVenueDialog(props) {
         p.surfaces = p.surfaces === '' ? null : Number(p.surfaces)
         p.livebarn_venue_id = p.livebarn_venue_id === '' ? null : Number(p.livebarn_venue_id)
         p.mhr_venue_id = p.mhr_venue_id === '' ? null : Number(p.mhr_venue_id)
+        p.latitude = p.latitude === '' ? null : Number(p.latitude)
+        p.longitude = p.longitude === '' ? null : Number(p.longitude)
         return p
     }
 
@@ -190,6 +196,26 @@ export default function KmasterVenueDialog(props) {
                                     value={form.postal_code}
                                     onChange={e => handleChange('postal_code', e.target.value)}
                                     className="w-full rounded border border-gray-300 px-3 py-2"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium mb-1">Latitude</label>
+                                <input
+                                    type="number"
+                                    value={form.latitude}
+                                    onChange={e => handleChange('latitude', e.target.value)}
+                                    className="w-full rounded border border-gray-300 px-3 py-2 no-spin"
+                                    step="any"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium mb-1">Longitude</label>
+                                <input
+                                    type="number"
+                                    value={form.longitude}
+                                    onChange={e => handleChange('longitude', e.target.value)}
+                                    className="w-full rounded border border-gray-300 px-3 py-2 no-spin"
+                                    step="any"
                                 />
                             </div>
                             <div className="col-span-2">

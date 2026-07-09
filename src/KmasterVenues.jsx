@@ -194,6 +194,8 @@ export default function KmasterVenues() {
                 <td className="text-left px-4 py-2">{r.city}</td>
                 <td className="text-left px-4 py-2">{r.province_state}</td>
                 <td className="text-left px-4 py-2">{r.country}</td>
+                <td className="text-left px-4 py-2">{r.latitude ?? ''}</td>
+                <td className="text-left px-4 py-2">{r.longitude ?? ''}</td>
                 <td className="text-left px-4 py-2">{r.surfaces}</td>
                 <td className="text-left px-4 py-2">{r.account_status}</td>
                 <td className={`text-left px-4 py-2 ${r.livebarn_venue_id_matched === false && r.livebarn_venue_id ? 'text-red-600' : ''}`}>
@@ -410,6 +412,8 @@ export default function KmasterVenues() {
                             <th className="px-4 py-2">City</th>
                             <th className="px-4 py-2">Province/State</th>
                             <th className="px-4 py-2">Country</th>
+                            <th className="px-4 py-2">Lat</th>
+                            <th className="px-4 py-2">Lon</th>
                             <th className="px-4 py-2">Surfaces</th>
                             <th className="px-4 py-2">Status</th>
                             <th className="px-4 py-2">LiveBarn Venue ID</th>
