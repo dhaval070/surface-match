@@ -24,6 +24,7 @@ export default function SitesConfig() {
     const [selectedSeasonIds, setSelectedSeasonIds] = useState(new Set())
     const [isImporting, setIsImporting] = useState(false)
     const [tagFilter, setTagFilter] = useState('')
+    const [upcomingOnly, setUpcomingOnly] = useState(false)
     const [selectedTag, setSelectedTag] = useState(null)
     const [tagSuggestions, setTagSuggestions] = useState([])
     const [showTagSuggestions, setShowTagSuggestions] = useState(false)
@@ -88,13 +89,14 @@ export default function SitesConfig() {
         if (debouncedSearch) params.set('search', debouncedSearch)
         if (enabledFilter) params.set('enabled', enabledFilter)
         if (selectedTag) params.set('tag', selectedTag.name)
+        if (upcomingOnly) params.set('has_upcoming', 'true')
         if (sortColumn) params.set('sort', sortColumn)
         if (sortOrder) params.set('order', sortOrder)
         const qs = params.toString()
         api.get(apiurl + "/sites-config" + (qs ? '?' + qs : '')).then((resp) => {
             setSitesConfigs(resp.data || [])
         }).catch(e => console.error(e)).finally(() => setBusy(false))
-    }, [api, setBusy, setSitesConfigs, debouncedSearch, enabledFilter, selectedTag, sortColumn, sortOrder])
+    }, [api, setBusy, setSitesConfigs, debouncedSearch, enabledFilter, selectedTag, sortColumn, sortOrder, upcomingOnly])
 
     const loadParserTypes = useCallback(() => {
         api.get(apiurl + "/parser-types").then((resp) => {
@@ -727,7 +729,7 @@ export default function SitesConfig() {
 
             <div className="mb-4">
                 <div className="flex flex-wrap gap-2 mb-2 justify-end">
-                    <Button className="rounded bg-gray-500 py-2 px-4 text-sm text-white data-[hover]:bg-gray-400 data-[active]:bg-gray-600" onClick={() => { setSearchText(''); setEnabledFilter(''); setSortColumn(''); setSortOrder('asc'); setParserTypeFilter(''); setTagFilter(''); setSelectedTag(null); }}>
+                    <Button className="rounded bg-gray-500 py-2 px-4 text-sm text-white data-[hover]:bg-gray-400 data-[active]:bg-gray-600" onClick={() => { setSearchText(''); setEnabledFilter(''); setSortColumn(''); setSortOrder('asc'); setParserTypeFilter(''); setTagFilter(''); setSelectedTag(null); setUpcomingOnly(false); }}>
                         Reset Filters
                     </Button>
                     <Button className="rounded bg-blue-600 py-2 px-4 text-sm text-white data-[hover]:bg-blue-500 data-[active]:bg-blue-700" onClick={openImportDialog}>
@@ -814,6 +816,15 @@ export default function SitesConfig() {
                             </div>
                         )}
                     </div>
+                    <Field className="flex items-center space-x-2">
+                        <Label className="text-sm font-medium whitespace-nowrap">Upcoming Only</Label>
+                        <input
+                            type="checkbox"
+                            checked={upcomingOnly}
+                            onChange={(e) => setUpcomingOnly(e.target.checked)}
+                            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                    </Field>
                 </div>
             </div>
 
