@@ -64,6 +64,9 @@ export default function Layout() {
                             <button className={navLinkClass("/kmaster-venues")} onClick={() => navigate("/kmaster-venues")}>
                                 KMaster Venues
                             </button>
+                            <button className={navLinkClass("/spordle-surfaces")} onClick={() => navigate("/spordle-surfaces")}>
+                                Spordle Surfaces
+                            </button>
                         </div>
                         <div className="flex items-center space-x-4">
                             <Menu as="div" className="relative inline-block text-left">

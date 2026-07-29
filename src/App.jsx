@@ -14,6 +14,7 @@ import Users from './Users.jsx'
 import ChangePassword from './ChangePassword.jsx'
 import MHRLocations from './mhr-locations.jsx'
 import KmasterVenues from './KmasterVenues.jsx'
+import SpordleSurfaces from './SpordleSurfaces.jsx'
 
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 
@@ -35,6 +36,7 @@ export default function App() {
                         <Route path="/rink-report" element={<RinkReport />} />
                         <Route path="/users" element={<Users />} />
                         <Route path="/kmaster-venues" element={<KmasterVenues />} />
+                        <Route path="/spordle-surfaces" element={<SpordleSurfaces />} />
                         <Route path="/change-password" element={<ChangePassword />} />
                     </Route>
                 </Route>
