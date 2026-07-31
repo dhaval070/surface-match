@@ -70,6 +70,7 @@ export default function SpordleSurfaces() {
             <tr key={r.id} className="even:bg-gray-50 odd:bg-gray-200">
                 <td className="text-left px-4 py-2">{r.id}</td>
                 <td className="text-left px-4 py-2 font-medium">{r.venue_name}</td>
+                <td className="text-left px-4 py-2">{r.venue_address}</td>
                 <td className="text-left px-4 py-2">{r.venue_city}</td>
                 <td className="text-left px-4 py-2">{r.venue_region}</td>
                 <td className="text-left px-4 py-2">{r.venue_country}</td>
@@ -77,7 +78,6 @@ export default function SpordleSurfaces() {
                 <td className="text-left px-4 py-2">{r.surface_type}</td>
                 <td className="text-left px-4 py-2">{r.surface_size}</td>
                 <td className="text-left px-4 py-2">{r.surface_sports}</td>
-                <td className="text-left px-4 py-2">{r.surface_alias}</td>
                 <td className="text-left px-4 py-2">{r.livebarn_surface_id || ''}</td>
                 <td className="text-left px-4 py-2">{r.number_of_games_coming ?? ''}</td>
                 <td className="text-left px-4 py-2">{formatDate(r.created_at)}</td>
@@ -153,6 +153,7 @@ export default function SpordleSurfaces() {
                         <tr className="bg-slate-300">
                             <th className="px-4 py-2">ID</th>
                             <th className="px-4 py-2">Venue Name</th>
+                            <th className="px-4 py-2">Address</th>
                             <th className="px-4 py-2">City</th>
                             <th className="px-4 py-2">Region</th>
                             <th className="px-4 py-2">Country</th>
@@ -160,7 +161,6 @@ export default function SpordleSurfaces() {
                             <th className="px-4 py-2">Type</th>
                             <th className="px-4 py-2">Size</th>
                             <th className="px-4 py-2">Sports</th>
-                            <th className="px-4 py-2">Alias</th>
                             <th className="px-4 py-2">LiveBarn ID</th>
                             <th className="px-4 py-2">Games</th>
                             <th className="px-4 py-2">Created</th>
