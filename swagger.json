@@ -1,0 +1,2852 @@
+{
+    "schemes": [
+        "http",
+        "https"
+    ],
+    "swagger": "2.0",
+    "info": {
+        "description": "API for managing hockey rink schedules, surfaces, locations, and events",
+        "title": "Surface API",
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "name": "API Support",
+            "email": "support@example.com"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
+        "version": "1.0"
+    },
+    "host": "localhost:8000",
+    "basePath": "/",
+    "paths": {
+        "/events": {
+            "get": {
+                "description": "Returns paginated list of events with optional filters for site, surface, date range, and claim status. Includes surface status.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Events"
+                ],
+                "summary": "Get paginated events",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Page number (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Items per page (default: 10, max: 100)",
+                        "name": "perPage",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by site name",
+                        "name": "site",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by surface ID",
+                        "name": "surface_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by start date (YYYY-MM-DD)",
+                        "name": "start_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by end date (YYYY-MM-DD)",
+                        "name": "end_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Export as CSV when present (any non-empty value)",
+                        "name": "export",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by claim status (success or error)",
+                        "name": "claim_status",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.EventsResult"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid claim_status value",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ]
+            }
+        },
+        "/events/{id}": {
+            "put": {
+                "description": "Updates the surface_id (and location_id) for a single event or all future events at the same location",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Events"
+                ],
+                "summary": "Update event surface assignment",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Event ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Event update parameters",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/main.UpdateEventInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Event or Surface not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ]
+            }
+        },
+        "/gamesheet-seasons": {
+            "get": {
+                "description": "Fetches seasons from the Gamesheet API or a CSV file, and filters out inactive or expired seasons",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Gamesheet"
+                ],
+                "summary": "Get active gamesheet seasons",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Source of seasons: api (default) or csv",
+                        "name": "source",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Exclude seasons already stored in the local gamesheet_seasons table",
+                        "name": "exclude_existing",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/main.Season"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ]
+            }
+        },
+        "/gamesheet-seasons/import": {
+            "post": {
+                "description": "Accepts an array of Season objects and inserts them into gamesheet_seasons and sites_config tables within a single transaction. Skips records that already exist.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Gamesheet"
+                ],
+                "summary": "Import gamesheet seasons",
+                "parameters": [
+                    {
+                        "description": "Array of seasons to import",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/main.Season"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Number of seasons imported",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "integer"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ]
+            }
+        },
+        "/kmaster-venues": {
+            "get": {
+                "description": "Returns a paginated list of all venues from the kmaster venue list. Use export=json to download all records as a JSON file (limited fields + LiveBarn surfaces). Use export=csv to download all records as a CSV file (all fields). No pagination for exports.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "KmasterVenue"
+                ],
+                "summary": "List kmaster venues",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number (default 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Items per page (default 10, max 100)",
+                        "name": "perPage",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by country",
+                        "name": "country",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by province/state",
+                        "name": "state",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by venue name (partial match)",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Filter by livebarn venue match status",
+                        "name": "livebarn",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Export format: 'json' for JSON file download (limited fields + LiveBarn surfaces), 'csv' for CSV file download (all fields). No pagination for exports.",
+                        "name": "export",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Downloaded venue list as kmaster-venues-{timestamp}.csv",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "description": "Creates a new venue record in the kmaster venue list",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "KmasterVenue"
+                ],
+                "summary": "Create kmaster venue",
+                "parameters": [
+                    {
+                        "description": "Venue data",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.KmasterVenueListInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.KmasterVenueListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ]
+            }
+        },
+        "/kmaster-venues/{id}": {
+            "get": {
+                "description": "Returns a single venue record from the kmaster venue list",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "KmasterVenue"
+                ],
+                "summary": "Get kmaster venue by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Venue ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.KmasterVenueListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid ID",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "404": {
+                        "description": "Venue not found",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "description": "Updates an existing venue record in the kmaster venue list",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "KmasterVenue"
+                ],
+                "summary": "Update kmaster venue",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Venue ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Updated venue data",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.KmasterVenueListInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.KmasterVenueListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "404": {
+                        "description": "Venue not found",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "description": "Deletes a venue record from the kmaster venue list",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "KmasterVenue"
+                ],
+                "summary": "Delete kmaster venue",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Venue ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success message",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid ID",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "404": {
+                        "description": "Venue not found",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ]
+            }
+        },
+        "/locations/{id}": {
+            "get": {
+                "description": "Returns a LiveBarn location with its associated surfaces",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Locations"
+                ],
+                "summary": "Get LiveBarn location by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Location ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/main.LocationWithSurfaces"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid ID",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "404": {
+                        "description": "Location not found",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ]
+            }
+        },
+        "/mhr-lb-notes": {
+            "post": {
+                "description": "Updates the lb_notes field for a specific MHR location",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Mappings"
+                ],
+                "summary": "Update LiveBarn notes for MHR location",
+                "parameters": [
+                    {
+                        "description": "MHR ID and LiveBarn notes",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/main.SetMhrLbNotesInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success message",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ]
+            }
+        },
+        "/mhr-lb-notes/{mhr_id}": {
+            "get": {
+                "description": "Retrieves the lb_notes field for a specific MHR location",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Mappings"
+                ],
+                "summary": "Get LiveBarn notes for MHR location",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "MHR location ID",
+                        "name": "mhr_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "LiveBarn notes",
+                        "schema": {
+                            "$ref": "#/definitions/main.GetMhrLbNotesResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "MHR location not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ]
+            }
+        },
+        "/mhr-locations": {
+            "get": {
+                "description": "Returns paginated MHR location mappings with optional filters. Include export query parameter to download CSV.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Mappings"
+                ],
+                "summary": "Get paginated MHR location mappings",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Page number (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Items per page (default: 10, max: 100)",
+                        "name": "perPage",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by rink name (partial match)",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by province (partial match)",
+                        "name": "province",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by LiveBarn location mapping status (0 for unmapped, 1 for mapped)",
+                        "name": "livebarn_location_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort column (mhr_id, created_at)",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort direction (asc, desc)",
+                        "name": "order",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Export as CSV when present (any non-empty value)",
+                        "name": "export",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.MHRLocResult"
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ]
+            }
+        },
+        "/mhr-locations/{mhr_id}": {
+            "get": {
+                "description": "Returns a single MHR location with its LiveBarn location and surface associations",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Mappings"
+                ],
+                "summary": "Get MHR location by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "MHR location ID",
+                        "name": "mhr_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.MhrLocation"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid MHR ID format",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "404": {
+                        "description": "MHR location not found",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ]
+            }
+        },
+        "/scrape": {
+            "post": {
+                "description": "Starts scraping for specified site or all enabled sites. Sites already being scraped are skipped. Returns 409 only if ALL requested sites are already running.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Scraping"
+                ],
+                "summary": "Trigger scraping for site(s)",
+                "parameters": [
+                    {
+                        "description": "Scraping request parameters",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/main.ScrapeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted, returns job status with sites_started and optionally sites_skipped",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "All requested sites are already being scraped",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ]
+            }
+        },
+        "/scrape/status": {
+            "get": {
+                "description": "Returns current scraping status for all configured sites",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Scraping"
+                ],
+                "summary": "Get scraping status for all sites",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/main.ScrapeStatus"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ]
+            }
+        },
+        "/scrape/status/{site}": {
+            "get": {
+                "description": "Returns current scraping status for the specified site",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Scraping"
+                ],
+                "summary": "Get scraping status for a site",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Site name",
+                        "name": "site",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/main.ScrapeStatus"
+                        }
+                    },
+                    "404": {
+                        "description": "Site not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ]
+            }
+        },
+        "/site-location-tags": {
+            "get": {
+                "description": "Returns all tags assigned to a specific site-location pair",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tags"
+                ],
+                "summary": "Get tags for a site location",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Site name",
+                        "name": "site",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Location name",
+                        "name": "location",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Tag"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Missing required query parameters",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "description": "Associates tags (by ID) with a specific site-location pair",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tags"
+                ],
+                "summary": "Add tags to a site location",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Site name",
+                        "name": "site",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Location name",
+                        "name": "location",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "description": "Tag IDs to add",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.AddTagsToSiteLocationInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Tag"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Missing or invalid parameters",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "description": "Removes an association between a tag and a site-location",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tags"
+                ],
+                "summary": "Remove a tag from a site location",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Site name",
+                        "name": "site",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Location name",
+                        "name": "location",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Tag ID",
+                        "name": "tag_id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Missing or invalid parameters",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ]
+            }
+        },
+        "/site-locations": {
+            "get": {
+                "description": "Returns paginated site location mappings for a given site with optional pagination parameters",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Mappings"
+                ],
+                "summary": "Get paginated site location mappings",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Site name",
+                        "name": "site",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter locations starting with this value",
+                        "name": "location",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by tag name (exact match)",
+                        "name": "tag",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Page number (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Items per page (default: 10, max: 100)",
+                        "name": "perPage",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.SiteLocResult"
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ]
+            }
+        },
+        "/sites-config": {
+            "get": {
+                "description": "Returns all site configurations with optional enabled filter, text search, tag filter, and sorting",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SitesConfig"
+                ],
+                "summary": "List sites configurations",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by enabled status (true/false)",
+                        "name": "enabled",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search by site name or display name (partial match)",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by tag name (exact match)",
+                        "name": "tag",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter to sites with upcoming games (games_imported \u003e 0) (true/false)",
+                        "name": "has_upcoming",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Filter by readiness status (0=pending, 1=in progress, 2=ready)",
+                        "name": "readiness_status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort column (site_name, display_name, last_scraped_at, games_scraped, games_imported, readiness_status)",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort direction (asc, desc)",
+                        "name": "order",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.SitesConfigResponse"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            }
+        },
+        "/sites-config/{id}/readiness": {
+            "put": {
+                "description": "Updates the readiness status (0=pending, 1=in progress, 2=ready) for a site configuration",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SitesConfig"
+                ],
+                "summary": "Update site readiness status",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Site Config ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Readiness status",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.SitesConfigResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid readiness status",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "404": {
+                        "description": "Site config not found",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ]
+            }
+        },
+        "/sites-config/{id}/toggle": {
+            "post": {
+                "description": "Toggles the enabled status of a site configuration. If enabled is NULL, sets to true.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SitesConfig"
+                ],
+                "summary": "Toggle site configuration enabled status",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Site Config ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.SitesConfigResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Site config not found",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            }
+        },
+        "/sites-tags": {
+            "get": {
+                "description": "Returns all tags assigned to a specific site",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tags"
+                ],
+                "summary": "Get tags for a site",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Site name",
+                        "name": "site_name",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Tag"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Missing required query parameters",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "description": "Associates tags (by ID) with a specific site",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tags"
+                ],
+                "summary": "Add tags to a site",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Site name",
+                        "name": "site_name",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "description": "Tag IDs to add",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.AddTagsToSiteInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Tag"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Missing or invalid parameters",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "description": "Removes an association between a tag and a site",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tags"
+                ],
+                "summary": "Remove a tag from a site",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Site name",
+                        "name": "site_name",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Tag ID",
+                        "name": "tag_id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Missing or invalid parameters",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ]
+            }
+        },
+        "/spordle-surfaces": {
+            "get": {
+                "description": "Returns a paginated list of surfaces from the spordle surfaces table",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SpordleSurface"
+                ],
+                "summary": "List spordle surfaces",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number (default 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Items per page (default 10, max 100)",
+                        "name": "perPage",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by venue name (partial match)",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by venue city (exact match)",
+                        "name": "city",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by venue region/province (exact match)",
+                        "name": "region",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by venue country (exact match)",
+                        "name": "country",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by surface sport (partial match)",
+                        "name": "sport",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by surface type (exact match, e.g. Ice, Grass, Synthetic)",
+                        "name": "surfaceType",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by surface size (exact match, e.g. XS, S, M, L, XL)",
+                        "name": "surfaceSize",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated spordle surface list",
+                        "schema": {
+                            "$ref": "#/definitions/models.SpordleSurfaceResult"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ]
+            }
+        },
+        "/tags": {
+            "get": {
+                "description": "Returns all tags, optionally filtered by name search",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tags"
+                ],
+                "summary": "List all tags",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search tags by name (partial match)",
+                        "name": "q",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Tag"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "description": "Creates a new tag with the given name, optional color and description",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tags"
+                ],
+                "summary": "Create a tag",
+                "parameters": [
+                    {
+                        "description": "Tag details",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.CreateTagInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/model.Tag"
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ]
+            }
+        },
+        "/tags/{id}": {
+            "put": {
+                "description": "Updates the name, color, or description of an existing tag",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tags"
+                ],
+                "summary": "Update a tag",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Tag ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Tag fields to update",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.UpdateTagInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Tag"
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "description": "Deletes a tag and removes all its associations (via CASCADE)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tags"
+                ],
+                "summary": "Delete a tag",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Tag ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                },
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ]
+            }
+        }
+    },
+    "definitions": {
+        "main.GetMhrLbNotesResponse": {
+            "type": "object",
+            "properties": {
+                "lb_notes": {
+                    "type": "string"
+                },
+                "mhr_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "main.LocationWithSurfaces": {
+            "type": "object",
+            "properties": {
+                "address1": {
+                    "type": "string"
+                },
+                "address2": {
+                    "type": "string"
+                },
+                "all_sheets_count": {
+                    "type": "integer"
+                },
+                "city": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "latitude": {
+                    "type": "number"
+                },
+                "logo_url": {
+                    "type": "string"
+                },
+                "longitude": {
+                    "type": "number"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "postal_code": {
+                    "type": "string"
+                },
+                "province_id": {
+                    "type": "integer"
+                },
+                "recording_hours_local": {
+                    "type": "string"
+                },
+                "surfaces": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Surface"
+                    }
+                },
+                "total_surfaces": {
+                    "type": "integer"
+                },
+                "uuid": {
+                    "type": "string"
+                },
+                "venue_status": {
+                    "type": "string"
+                },
+                "zone": {
+                    "type": "string"
+                }
+            }
+        },
+        "main.ScrapeRequest": {
+            "type": "object",
+            "properties": {
+                "date": {
+                    "description": "Date in YYYY-MM-DD format (optional)",
+                    "type": "string"
+                },
+                "site": {
+                    "description": "Site name (empty for all enabled sites)",
+                    "type": "string"
+                },
+                "workers": {
+                    "description": "Number of workers (optional, default 1)",
+                    "type": "integer"
+                }
+            }
+        },
+        "main.ScrapeStatus": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "description": "Error message if failed",
+                    "type": "string"
+                },
+                "is_due_for_scraping": {
+                    "description": "Whether site is due for scraping",
+                    "type": "boolean"
+                },
+                "last_scraped_at": {
+                    "description": "From sites_config",
+                    "type": "string"
+                },
+                "readiness_status": {
+                    "description": "0=pending, 1=in progress, 2=ready",
+                    "type": "integer"
+                },
+                "scrape_frequency": {
+                    "description": "Frequency in hours",
+                    "type": "integer"
+                },
+                "site": {
+                    "type": "string"
+                },
+                "started_at": {
+                    "description": "When scraping started",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "idle, running, completed, failed",
+                    "type": "string"
+                }
+            }
+        },
+        "main.Season": {
+            "type": "object",
+            "properties": {
+                "age_category": {
+                    "type": "string"
+                },
+                "country": {
+                    "type": "string"
+                },
+                "end": {
+                    "type": "string"
+                },
+                "game_type": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "leagueId": {
+                    "type": "integer"
+                },
+                "start": {
+                    "type": "string"
+                },
+                "state_province": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "main.SetMhrLbNotesInput": {
+            "type": "object",
+            "required": [
+                "mhr_id"
+            ],
+            "properties": {
+                "lb_notes": {
+                    "type": "string"
+                },
+                "mhr_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "main.UpdateEventInput": {
+            "type": "object",
+            "properties": {
+                "surface_id": {
+                    "type": "integer"
+                },
+                "update_future": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "model.Location": {
+            "type": "object",
+            "properties": {
+                "address1": {
+                    "type": "string"
+                },
+                "address2": {
+                    "type": "string"
+                },
+                "all_sheets_count": {
+                    "type": "integer"
+                },
+                "city": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "latitude": {
+                    "type": "number"
+                },
+                "logo_url": {
+                    "type": "string"
+                },
+                "longitude": {
+                    "type": "number"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "postal_code": {
+                    "type": "string"
+                },
+                "province_id": {
+                    "type": "integer"
+                },
+                "recording_hours_local": {
+                    "type": "string"
+                },
+                "total_surfaces": {
+                    "type": "integer"
+                },
+                "uuid": {
+                    "type": "string"
+                },
+                "venue_status": {
+                    "type": "string"
+                },
+                "zone": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.Surface": {
+            "type": "object",
+            "properties": {
+                "closed_from": {
+                    "type": "integer"
+                },
+                "coming_soon": {
+                    "type": "boolean"
+                },
+                "first_media_date": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "location_id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "online": {
+                    "type": "boolean"
+                },
+                "orderIndex": {
+                    "type": "integer"
+                },
+                "sports": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
+                },
+                "venue_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.Tag": {
+            "type": "object",
+            "properties": {
+                "color": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.AddTagsToSiteInput": {
+            "type": "object",
+            "required": [
+                "tag_ids"
+            ],
+            "properties": {
+                "tag_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "models.AddTagsToSiteLocationInput": {
+            "type": "object",
+            "required": [
+                "tag_ids"
+            ],
+            "properties": {
+                "tag_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "models.CreateTagInput": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "color": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.EventWithClaim": {
+            "type": "object",
+            "properties": {
+                "claim_created_at": {
+                    "type": "string"
+                },
+                "claim_error_message": {
+                    "type": "string"
+                },
+                "claim_http_status_code": {
+                    "type": "integer"
+                },
+                "claim_status": {
+                    "type": "integer"
+                },
+                "claim_updated_at": {
+                    "type": "string"
+                },
+                "date_created": {
+                    "type": "string"
+                },
+                "datetime": {
+                    "type": "string"
+                },
+                "division": {
+                    "type": "string"
+                },
+                "edate": {
+                    "type": "string"
+                },
+                "event_id": {
+                    "type": "string"
+                },
+                "guest_team": {
+                    "type": "string"
+                },
+                "home_team": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "location": {
+                    "type": "string"
+                },
+                "location_id": {
+                    "type": "integer"
+                },
+                "mhr_location_id": {
+                    "type": "integer"
+                },
+                "oid_guest": {
+                    "type": "string"
+                },
+                "oid_home": {
+                    "type": "string"
+                },
+                "site": {
+                    "type": "string"
+                },
+                "source_type": {
+                    "type": "string"
+                },
+                "surface_id": {
+                    "type": "integer"
+                },
+                "surface_status": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.EventsResult": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.EventWithClaim"
+                    }
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "perPage": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.KVenueResult": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.KmasterVenueListResponse"
+                    }
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "perPage": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.KmasterVenueExportItem": {
+            "type": "object",
+            "properties": {
+                "city": {
+                    "type": "string"
+                },
+                "country": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "latitude": {
+                    "type": "number"
+                },
+                "livebarn_venue_id": {
+                    "type": "integer"
+                },
+                "longitude": {
+                    "type": "number"
+                },
+                "mhr_venue_id": {
+                    "type": "integer"
+                },
+                "postal_code": {
+                    "type": "string"
+                },
+                "province_state": {
+                    "type": "string"
+                },
+                "spordle_venue_id": {
+                    "type": "string"
+                },
+                "surfaces": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.KmasterVenueExportSurface"
+                    }
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "venue_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.KmasterVenueExportResult": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.KmasterVenueExportItem"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.KmasterVenueExportSurface": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.KmasterVenueListInput": {
+            "type": "object",
+            "required": [
+                "venue_name"
+            ],
+            "properties": {
+                "account_status": {
+                    "type": "string"
+                },
+                "city": {
+                    "type": "string"
+                },
+                "company_name_alt1": {
+                    "type": "string"
+                },
+                "company_name_alt2": {
+                    "type": "string"
+                },
+                "company_name_alt3": {
+                    "type": "string"
+                },
+                "country": {
+                    "type": "string"
+                },
+                "latitude": {
+                    "type": "number"
+                },
+                "livebarn_venue_id": {
+                    "type": "integer"
+                },
+                "longitude": {
+                    "type": "number"
+                },
+                "mhr_venue_id": {
+                    "type": "integer"
+                },
+                "parent_company": {
+                    "type": "string"
+                },
+                "phone_number": {
+                    "type": "string"
+                },
+                "postal_code": {
+                    "type": "string"
+                },
+                "province_state": {
+                    "type": "string"
+                },
+                "rink_address": {
+                    "type": "string"
+                },
+                "streaming_platform": {
+                    "type": "string"
+                },
+                "surfaces": {
+                    "type": "integer"
+                },
+                "validate": {
+                    "type": "integer"
+                },
+                "venue_name": {
+                    "type": "string"
+                },
+                "venue_type": {
+                    "type": "string"
+                },
+                "website": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.KmasterVenueListResponse": {
+            "type": "object",
+            "properties": {
+                "account_status": {
+                    "type": "string"
+                },
+                "city": {
+                    "type": "string"
+                },
+                "company_name_alt1": {
+                    "type": "string"
+                },
+                "company_name_alt2": {
+                    "type": "string"
+                },
+                "company_name_alt3": {
+                    "type": "string"
+                },
+                "country": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "latitude": {
+                    "type": "number"
+                },
+                "livebarn_venue_id": {
+                    "type": "integer"
+                },
+                "livebarn_venue_id_matched": {
+                    "type": "boolean"
+                },
+                "longitude": {
+                    "type": "number"
+                },
+                "mhr_venue_id": {
+                    "type": "integer"
+                },
+                "mhr_venue_id_matched": {
+                    "type": "boolean"
+                },
+                "parent_company": {
+                    "type": "string"
+                },
+                "phone_number": {
+                    "type": "string"
+                },
+                "postal_code": {
+                    "type": "string"
+                },
+                "province_state": {
+                    "type": "string"
+                },
+                "rink_address": {
+                    "type": "string"
+                },
+                "spordle_venue_id": {
+                    "type": "string"
+                },
+                "streaming_platform": {
+                    "type": "string"
+                },
+                "surfaces": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "validate": {
+                    "type": "integer"
+                },
+                "venue_name": {
+                    "type": "string"
+                },
+                "venue_type": {
+                    "type": "string"
+                },
+                "website": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.MHRLocResult": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.MhrLocation"
+                    }
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "perPage": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.MhrLocation": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "aka": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "home_teams": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "lb_notes": {
+                    "type": "string"
+                },
+                "linkedSurface": {
+                    "$ref": "#/definitions/model.Surface"
+                },
+                "liveBarnLocation": {
+                    "$ref": "#/definitions/model.Location"
+                },
+                "livebarn_installed": {
+                    "type": "boolean"
+                },
+                "livebarn_location_id": {
+                    "type": "integer"
+                },
+                "livebarn_surface_id": {
+                    "type": "integer"
+                },
+                "mhr_id": {
+                    "type": "integer"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "province": {
+                    "type": "string"
+                },
+                "rink_name": {
+                    "type": "string"
+                },
+                "streaming": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "website": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.SiteLoc": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "linked_surface": {
+                    "$ref": "#/definitions/model.Surface"
+                },
+                "live_barn_location": {
+                    "$ref": "#/definitions/model.Location"
+                },
+                "location": {
+                    "type": "string"
+                },
+                "location_id": {
+                    "type": "integer"
+                },
+                "match_type": {
+                    "type": "string"
+                },
+                "scraping_error": {
+                    "type": "string"
+                },
+                "scraping_started_at": {
+                    "type": "string"
+                },
+                "scraping_status": {
+                    "type": "string"
+                },
+                "site": {
+                    "type": "string"
+                },
+                "surface": {
+                    "type": "string"
+                },
+                "surface_id": {
+                    "type": "integer"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Tag"
+                    }
+                }
+            }
+        },
+        "models.SiteLocResult": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.SiteLoc"
+                    }
+                },
+                "events_matched": {
+                    "type": "integer"
+                },
+                "games_claimed": {
+                    "type": "integer"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "perPage": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.SitesConfigResponse": {
+            "type": "object",
+            "properties": {
+                "base_url": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "display_name": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "games_imported": {
+                    "type": "integer"
+                },
+                "games_scraped": {
+                    "type": "integer"
+                },
+                "home_team": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "last_scraped_at": {
+                    "type": "string"
+                },
+                "league_name": {
+                    "type": "string"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "parser_config": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "parser_type": {
+                    "type": "string"
+                },
+                "readiness_status": {
+                    "type": "integer"
+                },
+                "scrape_frequency_hours": {
+                    "type": "integer"
+                },
+                "scraping_error": {
+                    "type": "string"
+                },
+                "scraping_started_at": {
+                    "type": "string"
+                },
+                "scraping_status": {
+                    "type": "string"
+                },
+                "site_name": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Tag"
+                    }
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.SpordleSurfaceResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "livebarn_surface_id": {
+                    "type": "string"
+                },
+                "number_of_games_coming": {
+                    "type": "integer"
+                },
+                "surface_alias": {
+                    "type": "string"
+                },
+                "surface_id": {
+                    "type": "integer"
+                },
+                "surface_name": {
+                    "type": "string"
+                },
+                "surface_size": {
+                    "type": "string"
+                },
+                "surface_sports": {
+                    "type": "string"
+                },
+                "surface_time_zone": {
+                    "type": "string"
+                },
+                "surface_type": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "venue_address": {
+                    "type": "string"
+                },
+                "venue_alias": {
+                    "type": "string"
+                },
+                "venue_city": {
+                    "type": "string"
+                },
+                "venue_country": {
+                    "type": "string"
+                },
+                "venue_id": {
+                    "type": "string"
+                },
+                "venue_latitude": {
+                    "type": "number"
+                },
+                "venue_longitude": {
+                    "type": "number"
+                },
+                "venue_name": {
+                    "type": "string"
+                },
+                "venue_postal_code": {
+                    "type": "string"
+                },
+                "venue_region": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.SpordleSurfaceResult": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.SpordleSurfaceResponse"
+                    }
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "perPage": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.UpdateTagInput": {
+            "type": "object",
+            "properties": {
+                "color": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "CookieAuth": {
+            "type": "apiKey",
+            "name": "gosession",
+            "in": "cookie"
+        }
+    }
+}

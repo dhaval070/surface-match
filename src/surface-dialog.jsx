@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Button, Field, Label, Select } from '@headlessui/react'
 import { Description, Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
 import PropTypes from 'prop-types';
@@ -13,32 +13,56 @@ SurfaceDialog.propTypes = {
 }
 
 const apiurl = import.meta.env.VITE_API_URL
+const PROVINCE_STORAGE_KEY = 'surface-dialog.lastProvince'
+
+function getStoredProvince() {
+    try {
+        return localStorage.getItem(PROVINCE_STORAGE_KEY) || ''
+    } catch {
+        return ''
+    }
+}
+
+function getFallbackProvince(props) {
+    if (props.province) return props.province
+    if (props.siteLoc) return props.siteLoc.province_name || ''
+    return ''
+}
 
 export default function SurfaceDialog(props) {
     const [surfaces, setSurfaces] = useState([])
     const [isBusy, setBusy] = useState(false)
     const [provinces, setProvinces] = useState([])
-    const [selectedProvince, setSelectedProvince] = useState("")
-
-    let defaultProvince = ""
-
-    if (props.province) {
-        defaultProvince = props.province
-    } else if (props.siteLoc) {
-        defaultProvince = props.siteLoc.province_name
-    }
+    const [selectedProvince, setSelectedProvince] = useState(
+        () => getStoredProvince() || getFallbackProvince(props)
+    )
+    const fallbackProvinceRef = useRef(getFallbackProvince(props))
+    fallbackProvinceRef.current = getFallbackProvince(props)
 
     useEffect(function() {
         if (!props.api) return
         props.api.get(apiurl + "/provinces")
             .then((res) => {
-                setProvinces(res.data)
-                if (defaultProvince) {
-                    setSelectedProvince(defaultProvince)
-                }
+                const list = res.data || []
+                setProvinces(list)
+                setSelectedProvince((current) => {
+                    if (current && list.some(p => p.province_name === current)) return current
+                    const fallback = fallbackProvinceRef.current
+                    if (fallback && list.some(p => p.province_name === fallback)) return fallback
+                    return current
+                })
             })
             .catch(e => console.error(e))
-    }, [props.api, defaultProvince])
+    }, [props.api])
+
+    useEffect(function() {
+        if (!selectedProvince) return
+        try {
+            localStorage.setItem(PROVINCE_STORAGE_KEY, selectedProvince)
+        } catch {
+            // storage unavailable
+        }
+    }, [selectedProvince])
 
     useEffect(function() {
         if (!props.api || !selectedProvince) return

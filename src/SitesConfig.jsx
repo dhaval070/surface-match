@@ -17,6 +17,7 @@ export default function SitesConfig() {
     const [searchText, setSearchText] = useState('')
     const [debouncedSearch, setDebouncedSearch] = useState('')
     const [enabledFilter, setEnabledFilter] = useState('')
+    const [readinessFilter, setReadinessFilter] = useState('')
     const [sortColumn, setSortColumn] = useState('')
     const [sortOrder, setSortOrder] = useState('asc')
     const [isImportDialogOpen, setIsImportDialogOpen] = useState(false)
@@ -88,6 +89,7 @@ export default function SitesConfig() {
         const params = new URLSearchParams()
         if (debouncedSearch) params.set('search', debouncedSearch)
         if (enabledFilter) params.set('enabled', enabledFilter)
+        if (readinessFilter !== '') params.set('readiness_status', readinessFilter)
         if (selectedTag) params.set('tag', selectedTag.name)
         if (upcomingOnly) params.set('has_upcoming', 'true')
         if (sortColumn) params.set('sort', sortColumn)
@@ -96,7 +98,7 @@ export default function SitesConfig() {
         api.get(apiurl + "/sites-config" + (qs ? '?' + qs : '')).then((resp) => {
             setSitesConfigs(resp.data || [])
         }).catch(e => console.error(e)).finally(() => setBusy(false))
-    }, [api, setBusy, setSitesConfigs, debouncedSearch, enabledFilter, selectedTag, sortColumn, sortOrder, upcomingOnly])
+    }, [api, setBusy, setSitesConfigs, debouncedSearch, enabledFilter, readinessFilter, selectedTag, sortColumn, sortOrder, upcomingOnly])
 
     const loadParserTypes = useCallback(() => {
         api.get(apiurl + "/parser-types").then((resp) => {
@@ -729,7 +731,7 @@ export default function SitesConfig() {
 
             <div className="mb-4">
                 <div className="flex flex-wrap gap-2 mb-2 justify-end">
-                    <Button className="rounded bg-gray-500 py-2 px-4 text-sm text-white data-[hover]:bg-gray-400 data-[active]:bg-gray-600" onClick={() => { setSearchText(''); setEnabledFilter(''); setSortColumn(''); setSortOrder('asc'); setParserTypeFilter(''); setTagFilter(''); setSelectedTag(null); setUpcomingOnly(false); }}>
+                    <Button className="rounded bg-gray-500 py-2 px-4 text-sm text-white data-[hover]:bg-gray-400 data-[active]:bg-gray-600" onClick={() => { setSearchText(''); setEnabledFilter(''); setReadinessFilter(''); setSortColumn(''); setSortOrder('asc'); setParserTypeFilter(''); setTagFilter(''); setSelectedTag(null); setUpcomingOnly(false); }}>
                         Reset Filters
                     </Button>
                     <Button className="rounded bg-blue-600 py-2 px-4 text-sm text-white data-[hover]:bg-blue-500 data-[active]:bg-blue-700" onClick={openImportDialog}>
@@ -760,6 +762,19 @@ export default function SitesConfig() {
                             <option value="">All</option>
                             <option value="true">Enabled</option>
                             <option value="false">Disabled</option>
+                        </Select>
+                    </Field>
+                    <Field className="flex items-center space-x-2">
+                        <Label className="text-sm font-medium">Readiness</Label>
+                        <Select
+                            value={readinessFilter}
+                            onChange={(e) => setReadinessFilter(e.target.value)}
+                            className="rounded border border-gray-300 px-3 py-2 text-sm"
+                        >
+                            <option value="">All</option>
+                            <option value="0">Pending</option>
+                            <option value="1">In Progress</option>
+                            <option value="2">Ready</option>
                         </Select>
                     </Field>
                     <Field className="flex items-center space-x-2">
