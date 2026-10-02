@@ -766,6 +766,7 @@ export default function Home() {
                                         <option value={0}>Pending</option>
                                         <option value={1}>In Progress</option>
                                         <option value={2}>Ready</option>
+                                        <option value={3}>Needs Review</option>
                                     </select>
                                     {readinessUpdateMsg && (
                                         <span className="text-xs text-emerald-600">{readinessUpdateMsg}</span>

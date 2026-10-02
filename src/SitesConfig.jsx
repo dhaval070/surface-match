@@ -362,9 +362,11 @@ export default function SitesConfig() {
                         ? <span className="fas fa-check-circle text-emerald-600 mr-1" title="Ready" />
                         : config.readiness_status === 1
                             ? <span className="fas fa-spinner fa-spin text-amber-500 mr-1" title="In Progress" />
-                            : config.readiness_status === 0
-                                ? <span className="fas fa-hourglass text-gray-400 mr-1" title="Pending" />
-                                : null}
+                            : config.readiness_status === 3
+                                ? <span className="fas fa-exclamation-triangle text-red-500 mr-1" title="Needs Review" />
+                                : config.readiness_status === 0
+                                    ? <span className="fas fa-hourglass text-gray-400 mr-1" title="Pending" />
+                                    : null}
                     <Link to={`/?site=${encodeURIComponent(config.site_name)}`} className="text-blue-600 hover:text-blue-800 hover:underline">
                         {config.site_name}{config.league_name ? ` (${config.league_name})` : ''}
                     </Link>
@@ -520,6 +522,7 @@ export default function SitesConfig() {
                                     <option value="0">Pending</option>
                                     <option value="1">In Progress</option>
                                     <option value="2">Ready</option>
+                                    <option value="3">Needs Review</option>
                                 </Select>
                             </Field>
 
@@ -775,6 +778,7 @@ export default function SitesConfig() {
                             <option value="0">Pending</option>
                             <option value="1">In Progress</option>
                             <option value="2">Ready</option>
+                            <option value="3">Needs Review</option>
                         </Select>
                     </Field>
                     <Field className="flex items-center space-x-2">
