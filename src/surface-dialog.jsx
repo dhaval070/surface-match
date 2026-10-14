@@ -10,6 +10,8 @@ SurfaceDialog.propTypes = {
     siteLoc: PropTypes.object,
     api: PropTypes.func,
     province: PropTypes.string,
+    bulk: PropTypes.bool,
+    bulkCount: PropTypes.number,
 }
 
 const apiurl = import.meta.env.VITE_API_URL
@@ -74,7 +76,7 @@ export default function SurfaceDialog(props) {
         }).catch(e => console.error(e)).finally(() => setBusy(false))
     }, [selectedProvince, props.api])
 
-    if (!props.api || !props.siteLoc) {
+    if (!props.api || (!props.siteLoc && !props.bulk)) {
         return <></>
     }
 
@@ -82,7 +84,7 @@ export default function SurfaceDialog(props) {
     if (surfaces.length > 0) {
         res = surfaces.map(r => (
             <tr key={r.id} className="even:bg-gray-50 odd:bg-gray-200">
-                <td className="border"><a href="#" className="font-bold text-blue-600 hover:text-blue-400" onClick={() => props.surfaceSelected(r.id, props.siteLoc)} >{r.id}</a></td>
+                <td className="border"><a href="#" className="font-bold text-blue-600 hover:text-blue-400" onClick={() => props.surfaceSelected(r.id, props.siteLoc, r)} >{r.id}</a></td>
                 <td className="border">{r.name}</td>
                 <td className="border">{r.location_name}</td>
                 <td className="border">{r.location_address1}</td>
@@ -105,12 +107,12 @@ export default function SurfaceDialog(props) {
                     <div className="flex items-center justify-center ">
                         <DialogPanel className=" w-max  h-full overflow-auto  space-y-2 border bg-white p-2">
                             <DialogTitle className="font-bold">
-                                Select surface for <span className="text-orange-500">{props.siteLoc && props.siteLoc.location}</span>
+                                Select surface for <span className="text-orange-500">{props.bulk ? `${props.bulkCount} selected rows` : (props.siteLoc && props.siteLoc.location)}</span>
                             </DialogTitle>
                             <Description></Description>
 
                             <div className="flex gap-2">
-                                <Button className="rounded bg-red-600 py-2 px-4 text-sm text-white data-[hover]:bg-red-500 data-[active]:bg-red-700" onClick={() => props.surfaceSelected(-1, props.siteLoc)}>Dnf</Button>
+                                <Button className="rounded bg-red-600 py-2 px-4 text-sm text-white data-[hover]:bg-red-500 data-[active]:bg-red-700" onClick={() => props.surfaceSelected(-1, props.siteLoc, null)}>Dnf</Button>
                             </div>
 
                             <Field>

@@ -55,9 +55,18 @@ export default function Home() {
     const [newTagName, setNewTagName] = useState('')
     const [confirmDeleteTagId, setConfirmDeleteTagId] = useState(null)
     const [confirmDeleteTagName, setConfirmDeleteTagName] = useState('')
+    const [selectedRows, setSelectedRows] = useState(new Map())
+    const [selectAllMatching, setSelectAllMatching] = useState(false)
+    const [bulkAction, setBulkAction] = useState(null)
+    const [confirmBulkOpen, setConfirmBulkOpen] = useState(false)
+    const [bulkBusy, setBulkBusy] = useState(false)
+    const [bulkFailures, setBulkFailures] = useState([])
     const dropdownRef = useRef(null)
     const scrapeStatusIntervalRef = useRef(null)
     const prevScrapeStatusRef = useRef(null)
+    const headerCheckboxRef = useRef(null)
+
+    const rowKey = (r) => `${r.site}::${r.location}`
 
     const fetchSiteLocations = useCallback(() => {
         setBusy(true)
@@ -140,6 +149,9 @@ export default function Home() {
         setLocationFilter('')
         setTagFilter('')
         setSelectedTag(null)
+        setSelectedRows(new Map())
+        setSelectAllMatching(false)
+        setBulkFailures([])
     }, [site])
 
     useEffect(() => {
@@ -228,8 +240,13 @@ export default function Home() {
         setIsOpen(true)
     }
 
-    let surfaceSelected = function(id, siteloc) {
+    let surfaceSelected = function(id, siteloc, surface) {
         setIsOpen(false)
+        if (!siteloc) {
+            setBulkAction({ kind: 'surface', value: id, label: id === -1 ? 'DNF' : (surface?.name || `#${id}`) })
+            setConfirmBulkOpen(true)
+            return
+        }
         setBusy(true)
         api.post(apiurl + "/set-surface", {
             site: siteloc.site,
@@ -240,8 +257,13 @@ export default function Home() {
         })
     }
 
-    let locationSelected = function(id, siteloc) {
+    let locationSelected = function(id, siteloc, location) {
         setShowLocationsModal(false)
+        if (!siteloc) {
+            setBulkAction({ kind: 'location', value: id, label: location?.name || `#${id}` })
+            setConfirmBulkOpen(true)
+            return
+        }
         setBusy(true)
         api.post(apiurl + "/set-location", {
             site: siteloc.site,
@@ -313,16 +335,19 @@ export default function Home() {
         setTagsModalSiteLoc(siteLoc)
         setTagSearch('')
         setNewTagName('')
+        setSelectedTagIds(new Set())
+        setOriginalTagIds(new Set())
         setShowTagsModal(true)
     }, [])
 
     useEffect(() => {
-        if (!showTagsModal || !tagsModalSiteLoc) return
+        if (!showTagsModal) return
         setTagBusy(true)
-        Promise.all([
-            fetchAllTags(),
-            fetchAssignedTags(tagsModalSiteLoc.site, tagsModalSiteLoc.location)
-        ]).finally(() => setTagBusy(false))
+        const tasks = [fetchAllTags()]
+        if (tagsModalSiteLoc) {
+            tasks.push(fetchAssignedTags(tagsModalSiteLoc.site, tagsModalSiteLoc.location))
+        }
+        Promise.all(tasks).finally(() => setTagBusy(false))
     }, [showTagsModal, tagsModalSiteLoc, fetchAllTags, fetchAssignedTags])
 
     useEffect(() => {
@@ -355,7 +380,15 @@ export default function Home() {
     }
 
     const handleSaveTags = () => {
-        if (!tagsModalSiteLoc) return
+        if (!tagsModalSiteLoc) {
+            const names = [...selectedTagIds]
+                .map(id => allTags.find(t => t.id === id)?.name)
+                .filter(Boolean)
+            setShowTagsModal(false)
+            setBulkAction({ kind: 'tags', value: [...selectedTagIds], label: names.length ? names.join(', ') : 'No tags' })
+            setConfirmBulkOpen(true)
+            return
+        }
         setTagBusy(true)
         const { site, location } = tagsModalSiteLoc
         const toAdd = [...selectedTagIds].filter(id => !originalTagIds.has(id))
@@ -429,6 +462,9 @@ export default function Home() {
         setSelectedTag(null)
         setSite('')
         setSiteLocCurrentPage(1)
+        setSelectedRows(new Map())
+        setSelectAllMatching(false)
+        setBulkFailures([])
     }
 
     let unsetMapping = function(type, siteloc) {
@@ -442,13 +478,169 @@ export default function Home() {
         })
     }
 
+    const toggleRowSelection = (r) => {
+        setSelectedRows(prev => {
+            const next = new Map(prev)
+            const key = rowKey(r)
+            if (next.has(key)) next.delete(key)
+            else next.set(key, r)
+            return next
+        })
+    }
+
+    const toggleAllOnPage = (checked) => {
+        setSelectedRows(prev => {
+            const next = new Map(prev)
+            siteLoc.forEach(r => {
+                const key = rowKey(r)
+                if (checked) next.set(key, r)
+                else next.delete(key)
+            })
+            return next
+        })
+    }
+
+    const clearSelection = () => {
+        setSelectedRows(new Map())
+        setSelectAllMatching(false)
+        setBulkFailures([])
+    }
+
+    const selectAllMatchingFilter = () => {
+        setBusy(true)
+        const params = { all: 1 }
+        if (site) params.site = site
+        if (debouncedLocationFilter) params.location = debouncedLocationFilter
+        if (selectedTag) params.tag = selectedTag.name
+        api.get(apiurl + "/site-locations", { params }).then((resp) => {
+            const data = resp.data && resp.data.data ? resp.data.data : resp.data
+            const next = new Map()
+            ;(data || []).forEach(r => next.set(rowKey(r), r))
+            setSelectedRows(next)
+            setSelectAllMatching(true)
+        }).catch(e => console.error(e)).finally(() => setBusy(false))
+    }
+
+    const openBulkSurface = () => {
+        setCurrSiteLoc(null)
+        setIsOpen(true)
+    }
+
+    const openBulkLocation = () => {
+        setLocationModalSiteLoc(null)
+        setShowLocationsModal(true)
+    }
+
+    const openBulkReset = (type) => {
+        setBulkAction({ kind: type === 'surface' ? 'reset-surface' : 'reset-location' })
+        setConfirmBulkOpen(true)
+    }
+
+    const bulkTitles = {
+        surface: 'Change Surface',
+        location: 'Change Location',
+        tags: 'Edit Tags',
+        'reset-surface': 'Reset Surface',
+        'reset-location': 'Reset Location',
+    }
+
+    const bulkCurrentValue = (r) => {
+        if (!bulkAction) return ''
+        if (bulkAction.kind === 'surface' || bulkAction.kind === 'reset-surface') {
+            return r.linked_surface?.name || (r.surface_id ? `#${r.surface_id}` : '—')
+        }
+        if (bulkAction.kind === 'location' || bulkAction.kind === 'reset-location') {
+            return r.live_barn_location?.name || (r.location_id ? `#${r.location_id}` : '—')
+        }
+        if (bulkAction.kind === 'tags') {
+            return (r.tags || []).map(t => t.name).join(', ') || '—'
+        }
+        return '—'
+    }
+
+    const bulkNewValue = () => {
+        if (!bulkAction) return ''
+        if (bulkAction.kind === 'surface' || bulkAction.kind === 'location' || bulkAction.kind === 'tags') {
+            return bulkAction.label
+        }
+        if (bulkAction.kind === 'reset-surface') return '— (cleared)'
+        if (bulkAction.kind === 'reset-location') return '— (cleared, surface too)'
+        return ''
+    }
+
+    const applyBulk = () => {
+        if (!bulkAction) return
+        const items = [...selectedRows.values()].map(r => ({ site: r.site, location: r.location }))
+        if (items.length === 0) return
+        setBulkBusy(true)
+        setBulkFailures([])
+        let req
+        if (bulkAction.kind === 'surface') {
+            req = api.post(apiurl + "/bulk/set-surface", { items, surface_id: bulkAction.value })
+        } else if (bulkAction.kind === 'location') {
+            req = api.post(apiurl + "/bulk/set-location", { items, location_id: bulkAction.value })
+        } else if (bulkAction.kind === 'reset-surface') {
+            req = api.post(apiurl + "/bulk/unset-mapping", { items, type: 'surface' })
+        } else if (bulkAction.kind === 'reset-location') {
+            req = api.post(apiurl + "/bulk/unset-mapping", { items, type: 'location' })
+        } else if (bulkAction.kind === 'tags') {
+            req = api.post(apiurl + "/bulk/site-location-tags", { items, tag_ids: bulkAction.value })
+        }
+        if (!req) {
+            setBulkBusy(false)
+            return
+        }
+        req.then((resp) => {
+            const data = resp.data || {}
+            const updated = data.updated || []
+            const results = data.results || []
+            const updatedByKey = new Map(updated.map(r => [rowKey(r), r]))
+            setSiteLoc(prev => prev.map(r => updatedByKey.has(rowKey(r)) ? updatedByKey.get(rowKey(r)) : r))
+            setSelectedRows(prev => {
+                const next = new Map(prev)
+                results.forEach(res => {
+                    if (res.success) next.delete(`${res.site}::${res.location}`)
+                })
+                return next
+            })
+            const failed = results.filter(res => !res.success)
+            setBulkFailures(failed)
+            setConfirmBulkOpen(false)
+            setBulkAction(null)
+            setSelectAllMatching(false)
+        }).catch((e) => {
+            console.error(e)
+            alert('Bulk update failed: ' + (e.response?.data?.error || e.message))
+        }).finally(() => setBulkBusy(false))
+    }
+
+    const pageKeys = siteLoc.map(rowKey)
+    const allOnPageSelected = pageKeys.length > 0 && pageKeys.every(k => selectedRows.has(k))
+    const someOnPageSelected = pageKeys.some(k => selectedRows.has(k))
+
+    useEffect(() => {
+        if (headerCheckboxRef.current) {
+            headerCheckboxRef.current.indeterminate = someOnPageSelected && !allOnPageSelected
+        }
+    }, [someOnPageSelected, allOnPageSelected])
+
     const isScrapingRunning = siteScrapingStatus?.status === 'running'
     const siteConfig = allSites.find(s => s.site_name === site)
     let rows = []
 
     if (siteLoc.length > 0) {
-        rows = siteLoc.map(r => (
-            <tr key={`${r.site}-${r.location}`} className="even:bg-gray-50 odd:bg-gray-200">
+        rows = siteLoc.map(r => {
+            const selected = selectedRows.has(rowKey(r))
+            return (
+            <tr key={`${r.site}-${r.location}`} className={selected ? 'bg-sky-100' : 'even:bg-gray-50 odd:bg-gray-200'}>
+                <td className="text-left w-10">
+                    <input
+                        type="checkbox"
+                        checked={selected}
+                        onChange={() => toggleRowSelection(r)}
+                        className="h-4 w-4 text-sky-600 rounded border-gray-300"
+                    />
+                </td>
                 <td className="text-left w-40">{r.site}</td>
                 <td className="text-left">{r.location}</td>
                 <td className="text-left">{r.address}</td>
@@ -483,7 +675,8 @@ export default function Home() {
                     </div>
                 </td>
             </tr>
-        ))
+            )
+        })
     }
 
     let options = []
@@ -504,13 +697,13 @@ export default function Home() {
                 </div>
             }
 
-            <SurfaceDialog province="Ontario" api={api} isOpen={isOpen} siteLoc={currSiteLoc} setIsOpen={setIsOpen} surfaceSelected={surfaceSelected} />
+            <SurfaceDialog province="Ontario" api={api} isOpen={isOpen} siteLoc={currSiteLoc} bulk={isOpen && !currSiteLoc} bulkCount={selectedRows.size} setIsOpen={setIsOpen} surfaceSelected={surfaceSelected} />
 
             <Dialog open={showLocationsModal} onClose={() => setShowLocationsModal(false)} className="relative z-50">
                 <div className="fixed inset-0 flex w-screen justify-center bg-white p-4">
                     <div className="flex items-center justify-center ">
                         <DialogPanel className=" w-max  h-full overflow-auto  space-y-2 border bg-white p-2">
-                            <DialogTitle className="font-bold">Select location for <span className="text-orange-500">{locationModalSiteLoc && locationModalSiteLoc.location}</span></DialogTitle>
+                            <DialogTitle className="font-bold">Select location for <span className="text-orange-500">{locationModalSiteLoc ? locationModalSiteLoc.location : `${selectedRows.size} selected rows`}</span></DialogTitle>
                             <Description />
 
                             <div className="flex items-center justify-between mb-2">
@@ -527,7 +720,7 @@ export default function Home() {
                                 <tbody>
                                     {locations && locations.map(l => (
                                         <tr key={l.id} className="even:bg-gray-50 odd:bg-gray-200">
-                                            <td className="border"><a href="#" className="font-bold text-blue-600 hover:text-blue-400" onClick={() => locationSelected(l.id, locationModalSiteLoc)}>{l.id}</a></td>
+                                            <td className="border"><a href="#" className="font-bold text-blue-600 hover:text-blue-400" onClick={() => locationSelected(l.id, locationModalSiteLoc, l)}>{l.id}</a></td>
                                             <td className="border">{l.name}</td>
                                             <td className="border">{l.city}</td>
                                             <td className="border">{l.postal_code}</td>
@@ -591,12 +784,85 @@ export default function Home() {
                 </div>
             </Dialog>
 
+            <Dialog open={confirmBulkOpen} onClose={() => { setConfirmBulkOpen(false); setBulkAction(null) }} className="relative z-50">
+                <div className="fixed inset-0 flex w-screen items-center justify-center bg-black/30 p-4">
+                    <DialogPanel className="max-w-4xl w-full max-h-[95vh] overflow-auto space-y-4 border bg-white p-6 rounded">
+                        <DialogTitle className="font-bold text-xl">{bulkAction ? bulkTitles[bulkAction.kind] : 'Confirm Bulk Update'}</DialogTitle>
+                        <Description className="text-sm text-gray-600">
+                            Apply this change to {selectedRows.size} selected row(s)? This cannot be undone.
+                        </Description>
+                        <div className="overflow-auto max-h-[50vh] border rounded">
+                            <table className="w-full text-sm">
+                                <thead className="sticky top-0 bg-gray-100">
+                                    <tr>
+                                        <th className="text-left p-2">Site</th>
+                                        <th className="text-left p-2">Location</th>
+                                        <th className="text-left p-2">Current</th>
+                                        <th className="text-left p-2">New</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {[...selectedRows.values()].map(r => (
+                                        <tr key={rowKey(r)} className="even:bg-gray-50 odd:bg-gray-200">
+                                            <td className="p-2">{r.site}</td>
+                                            <td className="p-2">{r.location}</td>
+                                            <td className="p-2">{bulkCurrentValue(r)}</td>
+                                            <td className="p-2 font-medium">{bulkNewValue()}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div className="flex justify-end gap-4">
+                            <Button className="rounded bg-gray-600 py-2 px-4 text-sm text-white data-[hover]:bg-gray-500 data-[active]:bg-gray-700" onClick={() => { setConfirmBulkOpen(false); setBulkAction(null) }}>Cancel</Button>
+                            <Button className="rounded bg-emerald-600 py-2 px-4 text-sm text-white data-[hover]:bg-emerald-500 data-[active]:bg-emerald-700 disabled:opacity-50" onClick={applyBulk} disabled={bulkBusy}>
+                                {bulkBusy ? 'Applying...' : `Apply to ${selectedRows.size} rows`}
+                            </Button>
+                        </div>
+                    </DialogPanel>
+                </div>
+            </Dialog>
+
+            <Dialog open={bulkFailures.length > 0} onClose={() => setBulkFailures([])} className="relative z-50">
+                <div className="fixed inset-0 flex w-screen items-center justify-center bg-black/30 p-4">
+                    <DialogPanel className="max-w-4xl w-full max-h-[95vh] overflow-auto space-y-4 border bg-white p-6 rounded">
+                        <DialogTitle className="font-bold text-xl">Bulk update results</DialogTitle>
+                        <Description className="text-sm text-gray-600">
+                            {bulkFailures.length} row(s) failed and remain selected so you can retry.
+                        </Description>
+                        <div className="overflow-auto max-h-[50vh] border rounded">
+                            <table className="w-full text-sm">
+                                <thead className="sticky top-0 bg-gray-100">
+                                    <tr>
+                                        <th className="text-left p-2">Site</th>
+                                        <th className="text-left p-2">Location</th>
+                                        <th className="text-left p-2">Error</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {bulkFailures.map((f, i) => (
+                                        <tr key={`${f.site}-${f.location}-${i}`} className="even:bg-gray-50 odd:bg-gray-200">
+                                            <td className="p-2">{f.site}</td>
+                                            <td className="p-2">{f.location}</td>
+                                            <td className="p-2 text-red-600">{f.error}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div className="flex justify-end">
+                            <Button className="rounded bg-gray-600 py-2 px-4 text-sm text-white data-[hover]:bg-gray-500 data-[active]:bg-gray-700" onClick={() => setBulkFailures([])}>Close</Button>
+                        </div>
+                    </DialogPanel>
+                </div>
+            </Dialog>
+
             <Dialog open={showTagsModal} onClose={() => setShowTagsModal(false)} className="relative z-50">
                 <div className="fixed inset-0 flex w-screen justify-center bg-white p-4">
                     <div className="flex items-center justify-center">
                         <DialogPanel className="w-full max-w-lg max-h-[90vh] overflow-auto space-y-4 border bg-white p-6 rounded shadow-xl">
-                            <DialogTitle className="font-bold text-xl">Manage Tags for <span className="text-orange-500">{tagsModalSiteLoc && tagsModalSiteLoc.location}</span> (<span className="text-gray-600">{tagsModalSiteLoc && tagsModalSiteLoc.site}</span>)</DialogTitle>
-                            <Description className="text-sm text-gray-600">Select tags to assign or create new ones.</Description>
+                            <DialogTitle className="font-bold text-xl">Manage Tags for <span className="text-orange-500">{tagsModalSiteLoc ? tagsModalSiteLoc.location : `${selectedRows.size} selected rows`}</span>{tagsModalSiteLoc && <> (<span className="text-gray-600">{tagsModalSiteLoc.site}</span>)</>}</DialogTitle>
+                            <Description className="text-sm text-gray-600">{tagsModalSiteLoc ? 'Select tags to assign or create new ones.' : 'The selected tags will replace the tags on every selected row.'}</Description>
 
                             <div className="flex gap-2">
                                 <input
@@ -863,9 +1129,35 @@ export default function Home() {
                         </select>
                     </div>
                 </div>
+                {selectedRows.size > 0 && (
+                    <div className="flex flex-wrap items-center gap-3 bg-sky-50 border border-sky-200 rounded-md px-3 py-2 mb-3">
+                        <span className="text-sm font-semibold">{selectedRows.size} selected</span>
+                        <Button className="rounded bg-sky-600 py-1.5 px-3 text-xs text-white data-[hover]:bg-sky-500 data-[active]:bg-sky-700" onClick={openBulkSurface}>Change Surface</Button>
+                        <Button className="rounded bg-sky-600 py-1.5 px-3 text-xs text-white data-[hover]:bg-sky-500 data-[active]:bg-sky-700" onClick={openBulkLocation}>Change Location</Button>
+                        <Button className="rounded bg-sky-600 py-1.5 px-3 text-xs text-white data-[hover]:bg-sky-500 data-[active]:bg-sky-700" onClick={() => openTagsModal(null)}>Edit Tags</Button>
+                        <Button className="rounded bg-emerald-600 py-1.5 px-3 text-xs text-white data-[hover]:bg-emerald-500 data-[active]:bg-emerald-700" onClick={() => openBulkReset('surface')}>Reset Surface</Button>
+                        <Button className="rounded bg-amber-600 py-1.5 px-3 text-xs text-white data-[hover]:bg-amber-500 data-[active]:bg-amber-700" onClick={() => openBulkReset('location')}>Reset Location</Button>
+                        {(siteLocPagination && siteLocPagination.total ? siteLocPagination.total : siteLoc.length) > selectedRows.size && (
+                            <button className="text-sky-700 underline text-sm" onClick={selectAllMatchingFilter}>
+                                Select all {siteLocPagination && siteLocPagination.total ? siteLocPagination.total : siteLoc.length} matching filter
+                            </button>
+                        )}
+                        {selectAllMatching && <span className="text-xs text-gray-500">all matching selected</span>}
+                        <button className="ml-auto text-gray-600 underline text-sm" onClick={clearSelection}>Clear selection</button>
+                    </div>
+                )}
                 <table className="bg-gray-100 w-full">
                     <thead className="sticky top-0">
                         <tr className="bg-slate-300">
+                            <th className="w-10 text-left">
+                                <input
+                                    ref={headerCheckboxRef}
+                                    type="checkbox"
+                                    checked={allOnPageSelected}
+                                    onChange={(e) => toggleAllOnPage(e.target.checked)}
+                                    className="h-4 w-4 text-sky-600 rounded border-gray-300"
+                                />
+                            </th>
                             <th>Site</th><th>Location</th><th>Address</th>
                             <th>Livebarn Location ID</th>
                             <th>Livebarn Location Name</th>
