@@ -3,6 +3,7 @@ import { Menu, MenuButton, MenuItems, MenuItem } from "@headlessui/react";
 import { Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "./AuthProvider";
 import { useNavigate } from "react-router-dom";
+import { canViewStats } from "./statsAccess";
 
 export default function Layout() {
     const auth = useAuth()
@@ -58,6 +59,11 @@ export default function Layout() {
                             <button className={navLinkClass("/events")} onClick={() => navigate("/events")}>
                                 Events
                             </button>
+                            {canViewStats(auth.user) && (
+                                <button className={navLinkClass("/stats")} onClick={() => navigate("/stats")}>
+                                    Stats
+                                </button>
+                            )}
                             <button className={navLinkClass("/users")} onClick={() => navigate("/users")}>
                                 Users
                             </button>

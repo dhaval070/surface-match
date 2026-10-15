@@ -8,6 +8,7 @@ import PrivateRoute from './PrivateRoute.jsx'
 import SitesConfig from './SitesConfig.jsx'
 import Locations from './Locations.jsx'
 import Events from './Events.jsx'
+import Stats from './Stats.jsx'
 import SurfaceReport from './SurfaceReport.jsx'
 import RinkReport from './RinkReport.jsx'
 import Users from './Users.jsx'
@@ -32,6 +33,7 @@ export default function App() {
                         <Route path="/sites-config" element={<SitesConfig />} />
                         <Route path="/locations" element={<Locations />} />
                         <Route path="/events" element={<Events />} />
+                        <Route path="/stats" element={<Stats />} />
                         <Route path="/surface-report" element={<SurfaceReport />} />
                         <Route path="/rink-report" element={<RinkReport />} />
                         <Route path="/users" element={<Users />} />
