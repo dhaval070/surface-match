@@ -170,9 +170,8 @@ export default function Stats() {
                             topBorder="blue"
                         />
                         <KpiCard
-                            label="…of which upcoming"
+                            label="Upcoming"
                             value={data.upcoming_today}
-                            subtext={`${data.upcoming_today_pct}% of today's imports`}
                             topBorder="blue"
                         />
                     </div>
@@ -190,7 +189,7 @@ export default function Stats() {
                                     topBorder="green"
                                 />
                                 <KpiCard
-                                    label="Claimed season to date"
+                                    label="Claimed games to date"
                                     value={gs.claimed_season}
                                     subtext={`of ${gs.season_games} games (${gs.claimed_season_pct}%)`}
                                     barPct={gs.claimed_season_pct}
