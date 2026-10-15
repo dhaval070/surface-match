@@ -38,14 +38,14 @@ export default function Events() {
     const [searchParams] = useSearchParams()
     const [site, setSite] = useState(searchParams.get('site') || "")
     const [allSites, setAllSites] = useState([])
-    const [startDate, setStartDate] = useState("")
-    const [endDate, setEndDate] = useState("")
+    const [startDate, setStartDate] = useState(searchParams.get('start_date') || "")
+    const [endDate, setEndDate] = useState(searchParams.get('end_date') || "")
     const [showSurfaceDialog, setShowSurfaceDialog] = useState(false)
     const [selectedEvent, setSelectedEvent] = useState(null)
     const [showConfirmDialog, setShowConfirmDialog] = useState(false)
     const [selectedSurfaceId, setSelectedSurfaceId] = useState(null)
     const [apiMessage, setApiMessage] = useState(null)
-    const [claimStatus, setClaimStatus] = useState("")
+    const [claimStatus, setClaimStatus] = useState(searchParams.get('claim_status') || "")
     const [claimErrorPopup, setClaimErrorPopup] = useState(null)
 
     const debouncedSite = useDebounce(site, 500);
